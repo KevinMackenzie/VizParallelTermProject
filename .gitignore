@@ -1,3 +1,4 @@
+# Haskell
 dist
 dist-*
 cabal-dev
@@ -21,3 +22,16 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
+
+#LaTeX
+*.log
+*.out
+*.pdf
+*.fdb_latexmk
+*.fls
+*.gz
+
+#CLion
+.idea/
+cmake-*
+peda-*
