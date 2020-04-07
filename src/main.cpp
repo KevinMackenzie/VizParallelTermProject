@@ -2,6 +2,7 @@
 #include "Options.h"
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
 using namespace std;
 using namespace smf;
@@ -34,7 +35,19 @@ struct MidiChar {
   SimpleMidiEvent event;
 };
 
+std::ostream& operator<<(std::ostream& o, const MidiChar& ch) {
+  return o << "Onset: " << ch.event.onset << "; Duration: " << ch.event.duration << "; Pitch: " << (int)ch.event.pitch << "; Velocity: " << (int)ch.event.velocity;
+}
+
 using MidiString = std::vector<MidiChar>;
+
+void printMidiEventList(const std::vector<SimpleMidiEvent>& evtlist) {
+  cout << setw(9) << "Onset " << setw(9) << "Duration " << setw(9) << "Pitch " << setw(9) << "Velocity " << endl;
+  for (auto it : evtlist) {
+    cout << setw(8) << it.onset << " " << setw(8) << it.duration << " " << setw(8) << (int) it.pitch << " " << setw(8)
+         << (int) it.velocity << endl;
+  }
+}
 
 MidiString constructMidiString(std::vector<SimpleMidiEvent> evts) {
   MidiString ret;
@@ -68,68 +81,241 @@ MidiString loadMidiString(const std::string& path) {
       }
     }
   }
+  cout << "Loading MIDI file: " << path << endl;
+  printMidiEventList(evtlist);
   return constructMidiString(evtlist);
 }
 
-struct MemoVal {
-  size_t weight;
+// Adjacency list implementation of a bipartite graph
+template<typename T>
+class WeightedBipartiteGraph {
+public:
+  struct edge_type {
+    size_t to;
+    float weight;
+  };
+private:
+  // Note: This has very poor locality.  If its an issue,
+  //  we can use an in-place vector and move to the heap
+  //  only for abnormally large adjacency lists per node
+  std::vector<std::vector<edge_type>> ltr;
+  std::vector<std::vector<edge_type>> rtl;
+  const std::vector<T>* left;
+  const std::vector<T>* right;
+  float total_weight;
+
+  static typename std::vector<edge_type>::iterator tfind(std::vector<edge_type>& vec, size_t t) {
+    auto it = vec.begin();
+    while (it != vec.end() && it->to != t) ++it;
+    return it;
+  }
+
+public:
+  WeightedBipartiteGraph(const std::vector<T>& l, const std::vector<T>& r) : left(&l), right(&r), ltr(l.size()),
+                                                                             rtl(r.size()), total_weight(0) {}
+
+  WeightedBipartiteGraph(const WeightedBipartiteGraph<T>& other) : ltr(other.ltr), rtl(other.rtl),
+                                                                   left(other.left), right(other.right),
+                                                                   total_weight(other.total_weight) {}
+
+  WeightedBipartiteGraph<T>& operator=(const WeightedBipartiteGraph<T>& other) {
+    ltr = other.ltr;
+    rtl = other.rtl;
+    left = other.left;
+    right = other.right;
+    total_weight = other.total_weight;
+    return *this;
+  }
+
+  void AddEdge(size_t l, size_t r, float w) {
+    auto it = tfind(ltr[l], r); // TODO: segfaulting here
+    if (it != ltr[l].end())  // Prevent duplicates (not multigraph)
+      return;
+    ltr[l].push_back({r, w});
+    rtl[r].push_back({l, w});
+    total_weight += w;
+  }
+
+  float GetEdgeWeight(size_t l, size_t r) const {
+    auto it = std::find(ltr[l], r);
+    if (it != ltr[l].end()) {
+      return it->weight;
+    }
+    return INFINITY;
+  }
+
+  float GetTotalWeight() const { return total_weight; }
+
+  float GetLNodeDegree(size_t l) const { return ltr[l].size(); }
+
+  float GetRNodeDegree(size_t r) const { return rtl[r].size(); }
+
+  const std::vector<edge_type>& GetLNodeEdges(size_t l) const { return ltr[l]; }
+
+  const std::vector<edge_type>& GetRNodeEdges(size_t r) const { return rtl[r]; }
+
+  void RemoveEdge(size_t l, size_t r) {
+    // Although this is linear wrt the size of the vectors,
+    //  we expect that adjacency will be small
+    auto it0 = tfind(ltr[l], r);
+    if (it0 != ltr[l].end()) {
+      total_weight -= it0->weight;
+      ltr[l].erase(it0);
+    }
+    auto it1 = tfind(rtl[r], l);
+    if (it1 != rtl[r].end()) {
+      rtl[r].erase(it1);
+    }
+  }
+
+  friend std::ostream& operator<<(std::ostream& o, const WeightedBipartiteGraph<T>& g) {
+    o << "Weighted Graph:" << std::endl;
+    o << "Left Nodes" << std::endl;
+    for (size_t i = 0; i < g.left->size(); ++i) {
+      o << "Node " << i << " (" << (*g.left)[i] << ")" << std::endl;
+      for (size_t j = 0; j < g.ltr[i].size(); ++j) {
+        o << "  " << g.ltr[i][j].to << ": " << g.ltr[i][j].weight << std::endl;
+      }
+    }
+    o << "Right Nodes" << std::endl;
+    for (size_t i = 0; i < g.right->size(); ++i) {
+      o << "Node " << i << " (" << (*g.right)[i] << ")" << std::endl;
+      for (size_t j = 0; j < g.rtl[i].size(); ++j) {
+        o << "  " << g.rtl[i][j].to << ": " << g.rtl[i][j].weight << std::endl;
+      }
+    }
+    return o;
+  }
 };
+
+struct MemoVal {
+  WeightedBipartiteGraph<MidiChar> g;
+};
+
+float weight_func(const MidiChar& ch0, const MidiChar& ch1) {
+  float pitch_comp = abs(ch0.event.pitch - ch1.event.pitch);
+  float time_comp = abs((float) ch0.event.onset - ch1.event.onset) / 10.f;
+  return pitch_comp + time_comp;
+}
+
+void addMinWeightInsert(MemoVal& m, size_t curr_inp_idx, const MidiChar& inp_val, const std::vector<MidiChar>& ref, size_t curr_ref_idx) {
+  // Handle the base case
+  if (curr_ref_idx == 0)
+    return;
+
+  // Find the minimum edge weight
+  size_t min_idx = 0;
+  float min_weight = INFINITY;
+  for (size_t i = 0; i < curr_ref_idx; ++i) { // Note: We don't look at the "CURRENT" ref index, only up to
+    float w = weight_func(ref[i], inp_val);
+    if (w < min_weight) {
+      min_idx = i;
+      min_weight = w;
+    }
+  }
+  // Add it to the graph
+  m.g.AddEdge(min_idx, curr_inp_idx, min_weight);
+
+  // Find all higher cost edges that don't orphan nodes if removed
+  std::vector<size_t> to_remove;
+  for (auto it : m.g.GetLNodeEdges(min_idx)) {
+    if (it.weight > min_weight && m.g.GetRNodeDegree(it.to) > 1) {
+      to_remove.emplace_back(it.to);
+    }
+  }
+  // Remove them
+  for (auto it : to_remove) {
+    m.g.RemoveEdge(min_idx, it);
+  }
+}
+
+void addMinWeightDelete(MemoVal& m, size_t curr_ref_idx, const MidiChar& ref_val, const std::vector<MidiChar>& inp, size_t curr_inp_idx) {
+  // Handle the base case
+  if (curr_inp_idx == 0)
+    return;
+
+  // Find the minimum edge weight
+  size_t min_idx = 0;
+  float min_weight = INFINITY;
+  for (size_t i = 0; i < curr_inp_idx; ++i) { // Note: only looks at 'prev' and not 'curr'
+    float w = weight_func(ref_val, inp[i]);
+    if (w < min_weight) {
+      min_idx = i;
+      min_weight = w;
+    }
+  }
+  // Add it to the graph
+  m.g.AddEdge(curr_ref_idx, min_idx, min_weight);
+
+  // Find all higher cost edges that don't orphan nodes if removed
+  std::vector<size_t> to_remove;
+  for (auto it : m.g.GetRNodeEdges(min_idx)) {
+    if (it.weight > min_weight && m.g.GetLNodeDegree(it.to) > 1) {
+      to_remove.emplace_back(it.to);
+    }
+  }
+  // Remove them
+  for (auto it : to_remove) {
+    m.g.RemoveEdge(it, min_idx);
+  }
+}
 
 void editDistance(const MidiString& ref, const MidiString& inp) {
   if (ref.empty() || inp.empty()) return;
-  std::vector<std::vector<MemoVal> > memo(ref.size() + 1, std::vector<MemoVal>(inp.size() + 1, MemoVal()));
+  std::vector<std::vector<MemoVal> > memo(ref.size() + 1,
+                                          std::vector<MemoVal>(inp.size() + 1,
+                                                               {WeightedBipartiteGraph<MidiChar>(ref, inp)}));
 
   // Fill the base-case row / column in the memo
-  for (size_t i = 0; i < ref.size() + 1; ++i) {
-    memo[i][0].weight = i;
-  }
-  for (size_t i = 0; i < inp.size() + 1; ++i) {
-    memo[0][i].weight = i;
-  }
+  // for (size_t i = 0; i < ref.size() + 1; ++i) {
+  //   memo[i][0].g =;
+  // }
+  // for (size_t i = 0; i < inp.size() + 1; ++i) {
+  //   memo[0][i].g =
+  // }
 
   size_t ref_idx = 1;
   for (auto ref_val : ref) {
     size_t inp_idx = 1;
     for (auto inp_val : inp) {
-      // Insertion
-      auto ref_m1 = memo[ref_idx - 1][inp_idx];
-      ref_m1.weight += 1;
+      // Insertion: Connect new input to existing ref
+      MemoVal ref_m1 = memo[ref_idx - 1][inp_idx];
+      addMinWeightInsert(ref_m1, inp_idx - 1, inp_val, ref, ref_idx - 1);
 
-      // Deletion
-      auto inp_m1 = memo[ref_idx][inp_idx - 1];
-      inp_m1.weight += 1;
+      // Deletion: Connect new ref to existing input
+      MemoVal inp_m1 = memo[ref_idx][inp_idx - 1];
+      addMinWeightDelete(inp_m1, ref_idx - 1, ref_val, inp, inp_idx - 1);
 
       // Substitution (or match)
-      auto prev = memo[ref_idx - 1][inp_idx - 1];
-      prev.weight += ref_val.event.pitch == inp_val.event.pitch ? 0 : 1;
+      MemoVal prev = memo[ref_idx - 1][inp_idx - 1];
+      addMinWeightInsert(prev, inp_idx - 1, inp_val, ref, ref_idx);
+      addMinWeightDelete(prev, ref_idx - 1, ref_val, inp, inp_idx);
 
-      // cout << "Comparing " << (int) ref_val.event.pitch << " and " << (int) inp_val.event.pitch;
-      if (prev.weight < ref_m1.weight && prev.weight < inp_m1.weight) {
-        // cout << "; Chose Substitution / Match";
-        memo[ref_idx][inp_idx] = prev;
-      } else if (ref_m1.weight < inp_m1.weight) {
-        // cout << "; Chose Insertion";
+      // TODO: how do we adjust the weight for the insertion / deletion case?  Or do we event want to?
+      float ins_weight = ref_m1.g.GetTotalWeight();
+      float del_weight = inp_m1.g.GetTotalWeight();
+      float mat_weight = prev.g.GetTotalWeight();
+
+      cout << "Comparing " << (int) ref_val.event.pitch << " and " << (int) inp_val.event.pitch;
+      if (ins_weight < del_weight && ins_weight < mat_weight) {
+        cout << "; Chose Insertion";
         memo[ref_idx][inp_idx] = ref_m1;
-      } else {
-        // cout << "; Chose Deletion";
+      } else if (del_weight < mat_weight) {
+        cout << "; Chose Deletion";
         memo[ref_idx][inp_idx] = inp_m1;
+      } else {
+        cout << "; Chose Substitution / Match";
+        memo[ref_idx][inp_idx] = prev;
       }
-      // cout << endl;
+      cout << endl;
 
       ++inp_idx;
     }
     ++ref_idx;
   }
 
-  cout << "Edit Distance Result: " << memo.back().back().weight << endl;
-}
-
-void printMidiEventList(const std::vector<SimpleMidiEvent>& evtlist) {
-  cout << setw(9) << "Onset " << setw(9) << "Duration " << setw(9) << "Pitch " << setw(9) << "Velocity " << endl;
-  for (auto it : evtlist) {
-    cout << setw(8) << it.onset << " " << setw(8) << it.duration << " " << setw(8) << (int) it.pitch << " " << setw(8)
-         << (int) it.velocity << endl;
-  }
+  std::cout << "Edit Distance Result: " << memo.back().back().g.GetTotalWeight() << endl;
+  std::cout << memo.back().back().g;
 }
 
 int main(int argc, char** argv) {
