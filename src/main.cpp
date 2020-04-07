@@ -35,8 +35,15 @@ struct MidiChar {
   SimpleMidiEvent event;
 };
 
+std::string pitchToNote(uint8_t pitch) {
+  char pitches[][12] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+  std::stringstream ss;
+  ss << pitches[pitch % 12] << -1 + pitch/12;
+  return ss.str();
+}
 std::ostream& operator<<(std::ostream& o, const MidiChar& ch) {
-  return o << "Onset: " << ch.event.onset << "; Duration: " << ch.event.duration << "; Pitch: " << (int)ch.event.pitch << "; Velocity: " << (int)ch.event.velocity;
+  return o << "Onset: " << ch.event.onset << "; Duration: " << ch.event.duration << "; Pitch: " << (int) ch.event.pitch
+           << "; Velocity: " << (int) ch.event.velocity;
 }
 
 using MidiString = std::vector<MidiChar>;
@@ -108,6 +115,14 @@ private:
     auto it = vec.begin();
     while (it != vec.end() && it->to != t) ++it;
     return it;
+  }
+  static const char* degToCol(size_t r) {
+    if (r == 0) {
+      return "red";
+    } else if (r > 1) {
+      return "yellow";
+    }
+    return "white";
   }
 
 public:
@@ -186,6 +201,44 @@ public:
     }
     return o;
   }
+
+  void PrintGraphViz(std::ostream& o) {
+    o << "graph \"name\" {" << std::endl;
+    // Credit: https://stackoverflow.com/a/44274606
+    // Show left/right on the same rank, and preserve ordering of the two sets
+    o << "rank1 [style=invisible];\nrank2 [style=invisible];" << std::endl;
+    o << "rank1 -- rank2 [color=white];" << std::endl;
+
+    // Node labels / properties
+    for (size_t i = 0; i < left->size(); ++i) {
+      o << "l" << i << " [label=" << pitchToNote((*left)[i].event.pitch) << ";style=filled;fillcolor=" << degToCol(ltr[i].size()) << "]" << std::endl;
+    }
+    for (size_t i = 0; i < right->size(); ++i) {
+      o << "r" << i << " [label=" << pitchToNote((*right)[i].event.pitch) << ";style=filled;fillcolor=" << degToCol(rtl[i].size()) << "]" << std::endl;
+    }
+
+    // Edges between l/r
+    for (size_t i = 0; i < ltr.size(); ++i) {
+      for (size_t j = 0; j < ltr[i].size(); ++j) {
+        o << "l" << i << " -- " << "r" << ltr[i][j].to << std::endl;
+      }
+    }
+
+    // Ordering within L
+    o << "{rank=same;rank1 " << std::endl;
+    for (size_t i = 0; i < left->size(); ++i) {
+      o << "-- l" << i;
+    }
+    o << "[style=invis];rankdir=LR}" << std::endl;
+
+    // Ordering within R
+    o << "{rank=same;rank2 " << std::endl;
+    for (size_t i = 0; i < right->size(); ++i) {
+      o << "-- r" << i;
+    }
+    o << "[style=invis];rankdir=LR}" << std::endl;
+    o << "}" << std::endl;
+  }
 };
 
 struct MemoVal {
@@ -194,7 +247,7 @@ struct MemoVal {
 
 float weight_func(const MidiChar& ch0, const MidiChar& ch1) {
   float pitch_comp = abs(ch0.event.pitch - ch1.event.pitch);
-  float time_comp = abs((float) ch0.event.onset - ch1.event.onset) / 10.f;
+  float time_comp = abs((float) ch0.event.onset - ch1.event.onset) / 1000.f;
   return pitch_comp + time_comp;
 }
 
@@ -316,6 +369,10 @@ void editDistance(const MidiString& ref, const MidiString& inp) {
 
   std::cout << "Edit Distance Result: " << memo.back().back().g.GetTotalWeight() << endl;
   std::cout << memo.back().back().g;
+
+  std::ofstream ofile("graph.dot");
+  memo.back().back().g.PrintGraphViz(ofile);
+  ofile.close();
 }
 
 int main(int argc, char** argv) {
