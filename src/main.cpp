@@ -211,10 +211,10 @@ public:
 
     // Node labels / properties
     for (size_t i = 0; i < left->size(); ++i) {
-      o << "l" << i << " [label=" << pitchToNote((*left)[i].event.pitch) << ";style=filled;fillcolor=" << degToCol(ltr[i].size()) << "]" << std::endl;
+      o << "l" << i << " [label=\"" << pitchToNote((*left)[i].event.pitch) << "\";style=filled;fillcolor=" << degToCol(ltr[i].size()) << "]" << std::endl;
     }
     for (size_t i = 0; i < right->size(); ++i) {
-      o << "r" << i << " [label=" << pitchToNote((*right)[i].event.pitch) << ";style=filled;fillcolor=" << degToCol(rtl[i].size()) << "]" << std::endl;
+      o << "r" << i << " [label=\"" << pitchToNote((*right)[i].event.pitch) << "\";style=filled;fillcolor=" << degToCol(rtl[i].size()) << "]" << std::endl;
     }
 
     // Edges between l/r
@@ -247,7 +247,7 @@ struct MemoVal {
 
 float weight_func(const MidiChar& ch0, const MidiChar& ch1) {
   float pitch_comp = abs(ch0.event.pitch - ch1.event.pitch);
-  float time_comp = abs((float) ch0.event.onset - ch1.event.onset) / 1000.f;
+  float time_comp = abs((float) ch0.event.onset - ch1.event.onset) / 100.f;
   return pitch_comp + time_comp;
 }
 
