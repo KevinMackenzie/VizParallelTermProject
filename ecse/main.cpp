@@ -345,6 +345,7 @@ void editDistance(const MidiString& ref, const MidiString& inp) {
       addMinWeightDelete(prev, ref_idx - 1, ref_val, inp, inp_idx);
 
       // TODO: how do we adjust the weight for the insertion / deletion case?  Or do we event want to?
+      // TODO: we probably want to make "orphan" nodes be fairly costly
       float ins_weight = ref_m1.g.GetTotalWeight();
       float del_weight = inp_m1.g.GetTotalWeight();
       float mat_weight = prev.g.GetTotalWeight();
