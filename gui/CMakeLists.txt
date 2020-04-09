@@ -26,6 +26,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
+include_directories(${lib_INCLUDE_DIRS})
+
 if(ANDROID)
   add_library(testqt SHARED
     main.cpp
@@ -42,4 +44,4 @@ else()
   )
 endif()
 
-target_link_libraries(testqt PRIVATE Qt5::Widgets)
+target_link_libraries(testqt PRIVATE Qt5::Widgets lib)
