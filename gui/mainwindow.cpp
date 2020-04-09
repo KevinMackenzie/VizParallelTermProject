@@ -87,14 +87,15 @@ void drawMidiNotes(QGraphicsScene &sc, QRectF rect, smf::MidiFile f) {
 
     QPen* pen = new QPen(QColor(0, 0, 0));
     QBrush* greenBrush = new QBrush(QColor(0, 127, 0));
-    for(int i = 0; i < f[0].size(); i++) {
-        if(!f[0][i].isNoteOn()) {
+    int track = 0;
+    for(int i = 0; i < f[track].size(); i++) {
+        if(!f[track][i].isNoteOn()) {
             continue;
         }
-        int pitch = f[0][i].getP1();
-        float startsec = f[0][i].seconds;
-        float duration = f[0][i].getDurationInSeconds();
-        std::cout << "Pitch: " << pitch << " on: " << f[0][i].seconds << " duration: " << f[0][i].getDurationInSeconds() << std::endl;
+        int pitch = f[track][i].getP1();
+        float startsec = f[track][i].seconds;
+        float duration = f[track][i].getDurationInSeconds();
+        std::cout << "Pitch: " << pitch << " on: " << startsec << " duration: " << duration << std::endl;
         qreal top = getYFromPitch(pitch, 21, 108, rect, QSizeF(10, 1));
         qreal left = startsec*scale_fac + rect.left() + whiteKeySize.width();
         qreal w = duration*scale_fac;
