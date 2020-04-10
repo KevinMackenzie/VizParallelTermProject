@@ -6,6 +6,7 @@
 #include <QGroupBox>
 #include <QRectF>
 #include <iostream>
+#include <QToolBar>
 #include "NoteInfo.h"
 #include "MidiFile.h"
 #include "PianoRollScene.h"
@@ -24,11 +25,15 @@ private slots:
 
 private:
     void setupMenuBar();
-    void drawMidiNotes(QGraphicsScene *sc, QRectF rect, smf::MidiFile f);
+    void setupToolBar();
+
+    void openFile(std::string filename);
 
     PianoRollScene *scene;
-    QGraphicsView *gview;
+    PianoRollView *gview;
+    QDockWidget *noteInfoDock;
     NoteInfo *noteInfo;
     smf::MidiFile file1;
+
 };
 #endif // MAINWINDOW_H

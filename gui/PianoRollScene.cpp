@@ -16,35 +16,8 @@ PianoRollScene::PianoRollScene(QRectF rect, int low_note, int high_note, QWidget
     blackKeySize = QSizeF(4 * unit, unit / 2);
 
     this->drawStaff();
-    this->drawKeyboard();
 }
 
-void PianoRollScene::drawKeyboard() {
-    QPen *pen = new QPen(QColor(0, 0, 0));
-    QBrush *blackBrush = new QBrush(QColor(0, 0, 0));
-
-    float left = this->sceneRect().left();
-
-    //Draw white keys
-    float top = this->sceneRect().top();
-    for (int i = high_note; i >= low_note; --i) {
-        if (!isBlackKey(i)) {
-            this->addRect(QRectF(QPointF(left, top), whiteKeySize));
-            top += whiteKeySize.height();
-        }
-    }
-
-    // Draw black keys after (on top)
-    top = this->sceneRect().top();
-    for (int i = high_note; i >= low_note; --i) {
-        if (isBlackKey(i)) {
-            this->addRect(QRectF(QPointF(left, top - blackKeySize.height() / 2), blackKeySize), *pen, *blackBrush);
-        } else {
-            top += whiteKeySize.height();
-        }
-    }
-
-}
 
 bool PianoRollScene::isBlackKey(int midiIdx) {
     int pc = midiIdx % 12;

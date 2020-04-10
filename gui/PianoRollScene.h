@@ -5,19 +5,18 @@
 #include <QGraphicsScene>
 #include <MidiFile.h>
 #include "NoteInfo.h"
-
+class PianoRollView;
 class PianoRollScene : public QGraphicsScene {
 Q_OBJECT
-
+friend class PianoRollView;
 public:
     explicit PianoRollScene(QRectF rect, int low_note = 21, int high_note = 108, QWidget *parent = nullptr);
 
     void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect);
 
 private:
-    bool isBlackKey(int midiIdx);
-
     qreal getYFromPitch(int pitch);
+    bool isBlackKey(int midiIdx);
 
     void drawKeyboard();
 
