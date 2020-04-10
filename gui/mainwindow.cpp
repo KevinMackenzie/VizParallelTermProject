@@ -1,17 +1,28 @@
+//Custom Qt Items
 #include "mainwindow.h"
-#include "./ui_mainwindow.h"
-#include <QResizeEvent>
-#include <iostream>
-#include <Analysis.h>
-#include "MidiFile.h"
 #include "MidiNoteGraphicsItem.h"
+
+//Standard Qt Items
+#include <QResizeEvent>
+#include <QFileDialog>
+#include <QMenu>
+#include <QMenuBar>
+#include <QDockWidget>
+#include <QVBoxLayout>
+#include <QLabel>
+
+//Other Libraries
+#include <iostream>
+
+//Custom Libraries
+
 
 bool isBlackKey(int midiIdx) {
     int pc = midiIdx % 12;
     return (pc < 4 && pc % 2 == 1) || (pc > 4 && pc % 2 == 0);
 }
 
-void drawPianoRoll(QGraphicsScene &sc, QRectF rect, int low_note, int high_note) {
+void drawPianoRoll(QGraphicsScene *sc, QRectF rect, int low_note, int high_note) {
     QSizeF whiteKeySize(150, 2.25);
     QSizeF blackKeySize(10, 1);
 
@@ -33,7 +44,7 @@ void drawPianoRoll(QGraphicsScene &sc, QRectF rect, int low_note, int high_note)
     float left = rect.x();
     for (int i = high_note; i >= low_note; --i) {
         if (!isBlackKey(i)) {
-            sc.addRect(QRectF(QPointF(left, top), whiteKeySize));
+            sc->addRect(QRectF(QPointF(left, top), whiteKeySize));
             top += whiteKeySize.height();
         }
     }
@@ -42,7 +53,7 @@ void drawPianoRoll(QGraphicsScene &sc, QRectF rect, int low_note, int high_note)
     top = rect.y();
     for (int i = high_note; i >= low_note; --i) {
         if (isBlackKey(i)) {
-            sc.addRect(QRectF(QPointF(left, top - blackKeySize.height() / 2), blackKeySize), *pen, *blackBrush);
+            sc->addRect(QRectF(QPointF(left, top - blackKeySize.height() / 2), blackKeySize), *pen, *blackBrush);
         } else {
             top += whiteKeySize.height();
         }
@@ -72,7 +83,7 @@ int getYFromPitch(int pitch, int low_note, int high_note, QRectF rect, QSizeF bl
 
 }
 
-void drawMidiNotes(QGraphicsScene &sc, QRectF rect, smf::MidiFile f) {
+void MainWindow::drawMidiNotes(QGraphicsScene *sc, QRectF rect, smf::MidiFile f) {
     QSizeF whiteKeySize(15, 2.25);
     QSizeF blackKeySize(10, 1);
 
@@ -108,7 +119,8 @@ void drawMidiNotes(QGraphicsScene &sc, QRectF rect, smf::MidiFile f) {
                 f[track][i].getKeyNumber());
         item->setBrush(*greenBrush);
         item->setPen(*pen);
-        sc.addItem(item);
+        sc->addItem(item);
+        connect(item, &MidiNoteGraphicsItem::moused, this->noteInfo, &NoteInfo::displayNote);
     }
 }
 
@@ -118,33 +130,30 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("MIDI Comparison");
 
     scene = new QGraphicsScene(QRectF(0, 0, 100, 100), this);
-    gview = new MidiGraphicsView(scene, this);
+    gview = new QGraphicsView(scene, this);
+    noteInfo = new NoteInfo(this);
     this->setCentralWidget(gview);
 
     setupMenuBar();
 
+    QDockWidget *dockWidget = new QDockWidget;
+    dockWidget->setWidget(noteInfo);
+    this->addDockWidget(Qt::RightDockWidgetArea, dockWidget);
+
     gview->move(10, 10);
 
     // Draw a standard 88 key keyboard
-    drawPianoRoll(*scene, QRectF(30, 20, 100, 500), 21, 108);
-    smf::MidiFile f;
-    f.read("midi_files/test1.mid");
-    f.doTimeAnalysis();
-    f.linkNotePairs();
-    drawMidiNotes(*scene, QRectF(130, 20, 500, 500), f);
+    drawPianoRoll(scene, QRectF(30, 20, 100, 500), 21, 108);
 }
 
 MainWindow::~MainWindow() {
+
 }
 
 void MainWindow::setupMenuBar() {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
 
     fileMenu->addAction(tr("&Open..."), this, &MainWindow::open);
-}
-
-void MainWindow::open() {
-
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
@@ -154,6 +163,14 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
 
     auto sz = gview->contentsRect().size();
     gview->setSceneRect(0, 0, sz.width(), sz.height());
+}
+
+void MainWindow::open() {
+    QString fileName = QFileDialog::getOpenFileName(this, "Open the file");
+    file1.read(fileName.toStdString());
+    file1.doTimeAnalysis();
+    file1.linkNotePairs();
+    drawMidiNotes(scene, QRectF(130, 20, 500, 500), file1);
 }
 
 

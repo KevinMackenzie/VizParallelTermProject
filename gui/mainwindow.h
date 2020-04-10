@@ -2,13 +2,14 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QtWidgets/QGraphicsScene>
-#include <QtWidgets/QGraphicsView>
-#include "MidiGraphicsView.h"
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGroupBox>
+#include <QRectF>
+#include <iostream>
+#include "NoteInfo.h"
+#include "MidiFile.h"
 
-//QT_BEGIN_NAMESPACE
-//namespace Ui { class MainWindow; }
-//QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
@@ -20,11 +21,16 @@ public:
 
     void resizeEvent(QResizeEvent *event) override;
 
+private slots:
+    void open();
+
 private:
     void setupMenuBar();
+    void drawMidiNotes(QGraphicsScene *sc, QRectF rect, smf::MidiFile f);
 
     QGraphicsScene *scene;
-    MidiGraphicsView *gview;
+    QGraphicsView *gview;
+    NoteInfo *noteInfo;
+    smf::MidiFile file1;
 };
-
 #endif // MAINWINDOW_H
