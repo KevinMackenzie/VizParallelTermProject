@@ -21,6 +21,6 @@ add_executable(testqt
         mainwindow.h
         MidiNoteGraphicsItem.cpp
         MidiNoteGraphicsItem.h
-        NoteInfo.cpp NoteInfo.h)
+        NoteInfo.cpp NoteInfo.h PianoRollScene.cpp PianoRollScene.h)
 
 target_link_libraries(testqt PRIVATE Qt5::Widgets lib)

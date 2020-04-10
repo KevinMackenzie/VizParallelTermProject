@@ -11,8 +11,6 @@ Q_OBJECT
 public:
     explicit NoteInfo(QWidget *parent = nullptr);
 
-    ~NoteInfo() override;
-
 public slots:
     void displayNote(int pitch);
 

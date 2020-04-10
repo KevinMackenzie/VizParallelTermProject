@@ -16,6 +16,3 @@ void NoteInfo::displayNote(int pitch) {
     pitchLabel->setText((QString("Pitch: %1").arg(pitch)));
 }
 
-NoteInfo::~NoteInfo() {
-
-}

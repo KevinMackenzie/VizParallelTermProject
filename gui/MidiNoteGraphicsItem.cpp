@@ -2,13 +2,13 @@
 #include "MidiNoteGraphicsItem.h"
 
 MidiNoteGraphicsItem::MidiNoteGraphicsItem(const QRectF &rc, int p, QGraphicsItem *parent)
-        : QGraphicsRectItem(rc, parent), Pitch(p) {
+        : QGraphicsRectItem(rc, parent), pitch(p) {
     this->setAcceptHoverEvents(true);
 }
 
 void MidiNoteGraphicsItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
     this->setBrush(red);
-    emit moused(Pitch);
+    emit moused(pitch);
     update();
 }
 

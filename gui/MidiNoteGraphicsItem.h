@@ -7,13 +7,12 @@
 #include <QBrush>
 
 class MidiNoteGraphicsItem : public QObject, public QGraphicsRectItem {
-    Q_OBJECT
+Q_OBJECT
 public:
-    const int Pitch;
+    explicit MidiNoteGraphicsItem(const QRectF &rc, int p, QGraphicsItem *parent = nullptr);
+
     const QBrush green = QBrush(QColor(0, 127, 0));
     const QBrush red = QBrush(QColor(255, 0, 0));
-
-    MidiNoteGraphicsItem(const QRectF &rc, int p, QGraphicsItem *parent = nullptr);
 
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
@@ -23,6 +22,8 @@ signals:
 
     void moused(int pitch);
 
+private:
+    const int pitch;
 };
 
 
