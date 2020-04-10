@@ -19,6 +19,10 @@ add_executable(testqt
         main.cpp
         mainwindow.cpp
         mainwindow.h
-        mainwindow.ui)
+        mainwindow.ui
+        MidiNoteGraphicsItem.cpp
+        MidiNoteGraphicsItem.h
+        MidiGraphicsView.cpp
+        MidiGraphicsView.h)
 
 target_link_libraries(testqt PRIVATE Qt5::Widgets lib)

@@ -2,7 +2,9 @@
 #include "./ui_mainwindow.h"
 #include <QResizeEvent>
 #include <iostream>
+#include <Analysis.h>
 #include "MidiFile.h"
+#include "MidiNoteGraphicsItem.h"
 
 bool isBlackKey(int midiIdx) {
   int pc = midiIdx % 12;
@@ -99,14 +101,21 @@ void drawMidiNotes(QGraphicsScene &sc, QRectF rect, smf::MidiFile f) {
         qreal top = getYFromPitch(pitch, 21, 108, rect, QSizeF(10, 1));
         qreal left = startsec*scale_fac + rect.left() + whiteKeySize.width();
         qreal w = duration*scale_fac;
-        sc.addRect(QRectF(left, top, w, isBlackKey(pitch) ? blackKeySize.height() : whiteKeySize.height()), *pen, *greenBrush);
+        // sc.addRect(QRectF(left, top, w, isBlackKey(pitch) ? blackKeySize.height() : whiteKeySize.height()), *pen, *greenBrush);
+
+        auto item = new MidiNoteGraphicsItem(QRectF(left, top, w, isBlackKey(pitch) ? blackKeySize.height() : whiteKeySize.height()), f[track][i].getKeyNumber());
+        item->setBrush(*greenBrush);
+        item->setPen(*pen);
+        sc.addItem(item);
     }
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow), scene(QRectF(0, 0, 100, 100), this) {
+    : QMainWindow(parent), ui(new Ui::MainWindow), scene(QRectF(0, 0, 100, 100), this), gview(&scene, nullptr) {
   ui->setupUi(this);
-  ui->mainGraphicsView->setScene(&scene);
+  gview.setParent(ui->centralwidget);
+
+  gview.move(10, 10);
 
   // Draw a standard 88 key keyboard
   drawPianoRoll(scene, QRectF(30, 20, 100, 500), 21, 108);
@@ -123,9 +132,11 @@ MainWindow::~MainWindow() {
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
-  ui->mainGraphicsView->resize(event->size() - 2 * QSize(10, 10));
+  gview.resize(event->size() - 2 * QSize(10, 10));
+  gview.setInteractive(true);
 
-  auto sz = ui->mainGraphicsView->contentsRect().size();
-  ui->mainGraphicsView->setSceneRect(0, 0, sz.width(), sz.height());
+  auto sz = gview.contentsRect().size();
+  gview.setSceneRect(0, 0, sz.width(), sz.height());
 }
+
 
