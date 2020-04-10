@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
+#include "MidiGraphicsView.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -13,6 +14,7 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
   QGraphicsScene scene;
+  MidiGraphicsView gview;
 public:
   explicit MainWindow(QWidget* parent = nullptr);
   ~MainWindow() override;
