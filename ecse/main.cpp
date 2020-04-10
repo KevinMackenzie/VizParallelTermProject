@@ -14,9 +14,14 @@ int main(int argc, char** argv) {
   MidiString ref = loadMidiString(options.getArg(1));
   MidiString inp = loadMidiString(options.getArg(2));
 
-  auto g = editDistance(ref, inp);
+  clock_t start = clock();
+  auto g = editDistancePDiagnal(ref, inp);
+  clock_t end = clock();
+
   std::cout << "Edit Distance Result: " << g.GetTotalWeight() << std::endl;
-  std::cout << g;
+  // std::cout << g;
+
+  std::cout << "Took " << (double)(end-start)/CLOCKS_PER_SEC << " Seconds" << std::endl;
 
   std::ofstream ofile("graph.dot");
   PrintGraphViz(g, ofile);

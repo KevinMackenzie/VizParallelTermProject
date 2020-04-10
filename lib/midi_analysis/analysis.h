@@ -27,6 +27,7 @@ struct MidiChar {
 using MidiString = std::vector<MidiChar>;
 
 WeightedBipartiteGraph<MidiChar> editDistance(const MidiString& ref, const MidiString& inp);
+WeightedBipartiteGraph<MidiChar> editDistancePDiagnal(const MidiString &ref, const MidiString &inp);
 
 
 #endif //PROJECT_ANALYSIS_H

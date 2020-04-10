@@ -67,7 +67,7 @@ MidiString loadMidiString(const std::string& path) {
     }
   }
   std::cout << "Loading MIDI file: " << path << std::endl;
-  printMidiEventList(evtlist);
+  // printMidiEventList(evtlist);
   return constructMidiString(evtlist);
 }
 
