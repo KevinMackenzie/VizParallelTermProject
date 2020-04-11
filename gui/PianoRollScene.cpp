@@ -2,14 +2,16 @@
 #include "PianoRollScene.h"
 #include "MidiNoteGraphicsItem.h"
 
-PianoRollScene::PianoRollScene(QRectF rect, int low_note, int high_note, QWidget *parent)
-        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note) {
+PianoRollScene::PianoRollScene(QRectF rect, int low_note, int high_note, int subdiv, QWidget *parent)
+        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv) {
 
     addItem(&pitchAxis);
     this->drawStaff();
 }
 
-void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect) {
+void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx) {
+    if (idx >= subdiv) return;
+
     QPen *pen = new QPen(QColor(0, 0, 0));
     QBrush *greenBrush = new QBrush(QColor(0, 127, 0));
     auto whiteKeySize = pitchAxis.getWhiteKeySize();
@@ -29,29 +31,32 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect) {
 //        std::cout << "Pitch: " << pitch << " on: " << startsec << " duration: " << duration << std::endl;
 
         // Calculate Coordinates
-        qreal top = getYFromPitch(pitch);
+        qreal full_height = isBlackKey(pitch) ? blackKeySize.height() : whiteKeySize.height();
+        qreal top = getYFromPitch(pitch) + ((float)idx/subdiv) * full_height;
         qreal left = startsec * width_scale + this->sceneRect().left() + whiteKeySize.width();
         qreal w = duration * width_scale;
 
         // Draw items
         auto item = new MidiNoteGraphicsItem(
-                QRectF(left, top, w, isBlackKey(pitch) ? blackKeySize.height() : whiteKeySize.height()),
+                QRectF(left, top, w, (1.f/subdiv) * full_height),
                 f[track][i].getKeyNumber());
         item->setBrush(*greenBrush);
         item->setPen(*pen);
         this->addItem(item);
-        this->midiItems.push_back(item);
+        this->midiItems[idx].push_back(item);
 
         // Connect mouseover signal to noteInfo
         connect(item, &MidiNoteGraphicsItem::moused, toConnect, &NoteInfo::displayNote);
     }
 }
 
-void PianoRollScene::clearMidiNotes() {
-    for (auto item : midiItems) {
+void PianoRollScene::clearMidiNotes(int idx) {
+    if (idx >= subdiv) return;
+
+    for (auto item : midiItems[idx]) {
         this->removeItem(item);
     }
-    midiItems.clear();
+    midiItems[idx].clear();
 }
 
 void PianoRollScene::drawStaff() {

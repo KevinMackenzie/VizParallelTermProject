@@ -13,10 +13,10 @@ class PianoRollScene : public QGraphicsScene {
 Q_OBJECT
 friend class PianoRollView;
 public:
-    explicit PianoRollScene(QRectF rect, int low_note = 21, int high_note = 108, QWidget *parent = nullptr);
+    explicit PianoRollScene(QRectF rect, int low_note = 21, int high_note = 108, int subdiv = 1, QWidget *parent = nullptr);
 
-    void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect);
-    void clearMidiNotes();
+    void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx);
+    void clearMidiNotes(int idx);
 
 private:
     qreal getYFromPitch(int pitch);
@@ -25,8 +25,9 @@ private:
 
     void drawStaff();
 
+    int subdiv;
     PianoRollPitchAxis pitchAxis;
-    std::vector<MidiNoteGraphicsItem*> midiItems;
+    std::vector<std::vector<MidiNoteGraphicsItem*> > midiItems;
 };
 
 

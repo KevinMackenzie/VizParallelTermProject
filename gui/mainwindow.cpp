@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     setObjectName("MainWindow");
     setWindowTitle("MIDI Comparison");
 
-    scene = new PianoRollScene(QRectF(0, 0, 5000, 500), 21, 108, this);
+    scene = new PianoRollScene(QRectF(0, 0, 5000, 500), 21, 108, 2, this);
     gview = new PianoRollView(scene, this);
     this->setCentralWidget(gview);
     gview->centerOn(0, 250);
@@ -33,12 +33,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     setupMenuBar();
     setupToolBar();
-    openFile("midi_files/test1.mid"); //TODO: Remove after testing
+    // openFile("midi_files/test1.mid", 0); //TODO: Remove after testing
 }
 
 void MainWindow::setupMenuBar() {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(tr("&Open..."), this, &MainWindow::open);
+    fileMenu->addAction(tr("&Open slot 1..."), this, &MainWindow::open1);
+    fileMenu->addAction(tr("&Open slot 2..."), this, &MainWindow::open2);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("View"));
     viewMenu->addAction(noteInfoDock->toggleViewAction());
@@ -53,9 +54,9 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
 //    gview->setSceneRect(0, 0, sz.width(), sz.height());
 }
 
-void MainWindow::open() {
+void MainWindow::open(int idx) {
     QString fileName = QFileDialog::getOpenFileName(this, "Open the file");
-    openFile(fileName.toStdString());
+    openFile(fileName.toStdString(), idx);
 }
 
 void MainWindow::setupToolBar() {
@@ -96,12 +97,12 @@ void MainWindow::setupToolBar() {
 
 }
 
-void MainWindow::openFile(std::string fileName) {
+void MainWindow::openFile(std::string fileName, int idx) {
     file1.read(fileName);
     file1.doTimeAnalysis();
     file1.linkNotePairs();
-    scene->clearMidiNotes();
-    scene->drawMidiNotes(file1, noteInfo);
+    scene->clearMidiNotes(idx);
+    scene->drawMidiNotes(file1, noteInfo, idx);
 }
 
 

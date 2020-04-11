@@ -21,13 +21,15 @@ public:
     void resizeEvent(QResizeEvent *event) override;
 
 private slots:
-    void open();
+    void open1() { open(0); }
+    void open2() { open(1); }
+    void open(int idx);
 
 private:
     void setupMenuBar();
     void setupToolBar();
 
-    void openFile(std::string filename);
+    void openFile(std::string filename, int idx);
 
     PianoRollScene *scene;
     PianoRollView *gview;
