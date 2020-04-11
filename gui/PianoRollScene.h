@@ -5,7 +5,10 @@
 #include <QGraphicsScene>
 #include <MidiFile.h>
 #include "NoteInfo.h"
+#include "PianoRollPitchAxis.h"
+
 class PianoRollView;
+class MidiNoteGraphicsItem;
 class PianoRollScene : public QGraphicsScene {
 Q_OBJECT
 friend class PianoRollView;
@@ -17,18 +20,13 @@ public:
 
 private:
     qreal getYFromPitch(int pitch);
-    bool isBlackKey(int midiIdx);
 
     void drawKeyboard();
 
     void drawStaff();
 
-    int low_note;
-    int high_note;
-    int numWhiteKeys;
-    QSizeF whiteKeySize;
-    QSizeF blackKeySize;
-
+    PianoRollPitchAxis pitchAxis;
+    std::vector<MidiNoteGraphicsItem*> midiItems;
 };
 
 

@@ -12,5 +12,6 @@ std::string pitchToNote(uint8_t pitch);
 std::ostream& operator<<(std::ostream& o, const MidiChar& ch);
 void printMidiEventList(const std::vector<SimpleMidiEvent>& evtlist);
 MidiString loadMidiString(const std::string& path);
+bool isBlackKey(int midiIdx);
 
 #endif //PROJECT_MISC_H

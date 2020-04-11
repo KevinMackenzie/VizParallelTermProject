@@ -1,5 +1,6 @@
 #include <QVBoxLayout>
 #include <QLabel>
+#include <Analysis.h>
 #include "NoteInfo.h"
 
 NoteInfo::NoteInfo(QWidget *parent)
@@ -13,6 +14,6 @@ NoteInfo::NoteInfo(QWidget *parent)
 }
 
 void NoteInfo::displayNote(int pitch) {
-    pitchLabel->setText((QString("Pitch: %1").arg(pitch)));
+    pitchLabel->setText((QString("Pitch: %1").arg(pitchToNote(pitch).c_str())));
 }
 

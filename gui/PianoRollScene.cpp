@@ -1,32 +1,19 @@
+#include <Analysis.h>
 #include "PianoRollScene.h"
 #include "MidiNoteGraphicsItem.h"
 
 PianoRollScene::PianoRollScene(QRectF rect, int low_note, int high_note, QWidget *parent)
-        : QGraphicsScene(rect, parent), low_note(low_note), high_note(high_note) {
-    numWhiteKeys = 0;
+        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note) {
 
-    for (unsigned int i = low_note; i <= high_note; ++i) {
-        if (!isBlackKey(i)) {
-            ++numWhiteKeys;
-        }
-    }
-
-    qreal unit = this->height() / numWhiteKeys;
-    whiteKeySize = QSizeF(6 * unit, unit);
-    blackKeySize = QSizeF(4 * unit, unit / 2);
-
+    addItem(&pitchAxis);
     this->drawStaff();
-}
-
-
-bool PianoRollScene::isBlackKey(int midiIdx) {
-    int pc = midiIdx % 12;
-    return (pc < 4 && pc % 2 == 1) || (pc > 4 && pc % 2 == 0);
 }
 
 void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect) {
     QPen *pen = new QPen(QColor(0, 0, 0));
     QBrush *greenBrush = new QBrush(QColor(0, 127, 0));
+    auto whiteKeySize = pitchAxis.getWhiteKeySize();
+    auto blackKeySize = pitchAxis.getBlackKeySize();
 
     float width_scale = (this->width() - blackKeySize.width()) / f.getFileDurationInSeconds();
 
@@ -72,23 +59,23 @@ void PianoRollScene::drawStaff() {
     qreal top = this->sceneRect().top();
     qreal left = this->sceneRect().left();
     qreal right = this->sceneRect().right();
-    for (unsigned int i = 0; i <= this->numWhiteKeys; ++i) {
+    for (unsigned int i = 0; i <= this->pitchAxis.getNumWhiteKeys(); ++i) {
         this->addLine(left, top, right, top, pen);
-        top += this->whiteKeySize.height();
+        top += pitchAxis.getWhiteKeySize().height();
     }
 }
 
 qreal PianoRollScene::getYFromPitch(int pitch) {
     int whiteKeyIdx = 0;
-    for (int i = this->high_note; i > pitch; --i) {
+    for (int i = this->pitchAxis.getHighNote(); i > pitch; --i) {
         if (!isBlackKey(i)) {
             ++whiteKeyIdx;
         }
     }
 
-    float whiteKeyY = whiteKeyIdx * this->whiteKeySize.height();
+    float whiteKeyY = whiteKeyIdx * pitchAxis.getWhiteKeySize().height();
     if (isBlackKey(pitch)) {
-        return whiteKeyY - (this->blackKeySize.height() / 2);
+        return whiteKeyY - (pitchAxis.getBlackKeySize().height() / 2);
     }
     return whiteKeyY;
 }

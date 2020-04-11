@@ -21,6 +21,11 @@ std::string pitchToNote(uint8_t pitch) {
   return ss.str();
 }
 
+bool isBlackKey(int midiIdx) {
+  int pc = midiIdx % 12;
+  return (pc < 4 && pc % 2 == 1) || (pc > 4 && pc % 2 == 0);
+}
+
 std::ostream& operator<<(std::ostream& o, const MidiChar& ch) {
   return o << "Onset: " << ch.event.onset << "; Duration: " << ch.event.duration << "; Pitch: " << (int) ch.event.pitch
            << "; Velocity: " << (int) ch.event.velocity;
