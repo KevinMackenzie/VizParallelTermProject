@@ -6,14 +6,14 @@
 #include "PianoRollView.h"
 
 void PianoRollView::scrollContentsBy(int dx, int dy) {
-  QGraphicsView::scrollContentsBy(dx, dy);
-  std::cout << "Moved by " << dx << std::endl;
-  // ((PianoRollScene*)scene())->pitchAxis.moveBy(-dx, 0);
-  updateAxes();
+    QGraphicsView::scrollContentsBy(dx, dy);
+    std::cout << "Moved by " << dx << std::endl;
+    // ((PianoRollScene*)scene())->pitchAxis.moveBy(-dx, 0);
+    updateAxes();
 }
 
 void PianoRollView::updateAxes() {
-  ((PianoRollScene*)scene())->pitchAxis.setLeft(this->mapToScene(0,0).x());
+    ((PianoRollScene *) scene())->pitchAxis.setLeft(this->mapToScene(0, 0).x());
 }
 
 // void PianoRollView::drawForeground(QPainter *painter, const QRectF &rect) {

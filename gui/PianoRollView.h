@@ -31,7 +31,7 @@ public slots:
     void zoomOutY() { this->scale(1, 0.95); updateAxes(); }
 
 private:
-  void updateAxes();
+    void updateAxes();
 };
 
 
