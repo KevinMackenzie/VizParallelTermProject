@@ -100,6 +100,7 @@ void MainWindow::openFile(std::string fileName) {
     file1.read(fileName);
     file1.doTimeAnalysis();
     file1.linkNotePairs();
+    scene->clearMidiNotes();
     scene->drawMidiNotes(file1, noteInfo);
 }
 

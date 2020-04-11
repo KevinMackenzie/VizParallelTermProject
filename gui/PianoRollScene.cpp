@@ -53,10 +53,18 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect) {
         item->setBrush(*greenBrush);
         item->setPen(*pen);
         this->addItem(item);
+        this->midiItems.push_back(item);
 
         // Connect mouseover signal to noteInfo
         connect(item, &MidiNoteGraphicsItem::moused, toConnect, &NoteInfo::displayNote);
     }
+}
+
+void PianoRollScene::clearMidiNotes() {
+    for (auto item : midiItems) {
+        this->removeItem(item);
+    }
+    midiItems.clear();
 }
 
 void PianoRollScene::drawStaff() {

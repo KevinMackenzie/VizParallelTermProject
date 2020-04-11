@@ -13,6 +13,7 @@ public:
     explicit PianoRollScene(QRectF rect, int low_note = 21, int high_note = 108, QWidget *parent = nullptr);
 
     void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect);
+    void clearMidiNotes();
 
 private:
     qreal getYFromPitch(int pitch);
