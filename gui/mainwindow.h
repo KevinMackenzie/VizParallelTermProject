@@ -10,7 +10,7 @@
 #include "NoteInfo.h"
 #include "MidiFile.h"
 #include "PianoRollScene.h"
-
+#include "MidiAnalysis.h"
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
@@ -23,19 +23,19 @@ public:
 private slots:
     void open1() { open(0); }
     void open2() { open(1); }
-    void open(int idx);
 
 private:
     void setupMenuBar();
     void setupToolBar();
 
+    void open(int idx);
     void openFile(std::string filename, int idx);
 
     PianoRollScene *scene;
     PianoRollView *gview;
     QDockWidget *noteInfoDock;
     NoteInfo *noteInfo;
-    smf::MidiFile file1;
+    MidiAnalysis analysis;
 
 };
 #endif // MAINWINDOW_H

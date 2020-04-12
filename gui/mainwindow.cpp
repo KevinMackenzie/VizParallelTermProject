@@ -98,9 +98,19 @@ void MainWindow::setupToolBar() {
 }
 
 void MainWindow::openFile(std::string fileName, int idx) {
+    smf::MidiFile file1;
     file1.read(fileName);
     file1.doTimeAnalysis();
     file1.linkNotePairs();
+    if (idx == 0) {
+        analysis.setReference(file1);
+    } else if (idx == 1) {
+        analysis.setInput(file1);
+    } else {
+        std::cout << "ERROR: invalid file slot" << std::endl;
+    }
+    analysis.Analyze();
+
     scene->clearMidiNotes(idx);
     scene->drawMidiNotes(file1, noteInfo, idx);
 }

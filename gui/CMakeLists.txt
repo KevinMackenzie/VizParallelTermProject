@@ -8,7 +8,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
@@ -21,6 +21,7 @@ add_executable(testqt
         mainwindow.h
         MidiNoteGraphicsItem.cpp
         MidiNoteGraphicsItem.h
+        MidiAnalysis.cpp
         NoteInfo.cpp NoteInfo.h PianoRollScene.cpp PianoRollScene.h PianoRollView.cpp PianoRollView.h PianoRollPitchAxis.cpp PianoRollPitchAxis.h)
 
 target_link_libraries(testqt PRIVATE Qt5::Widgets lib)
