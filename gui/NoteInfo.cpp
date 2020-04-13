@@ -15,11 +15,11 @@ NoteInfo::NoteInfo(const MidiAnalysis& a, QWidget *parent)
 
 void NoteInfo::displayNote(int slotNum, int noteIdx) {
     int pitch = 0;
-    if (analysis.getMapping()) {
+    if (analysis.getAnalysisResults()) {
         if (slotNum == 0) {
-            pitch = analysis.getMapping()->GetL()[noteIdx].pitch;
+            pitch = analysis.getAnalysisResults()->inpList.events[noteIdx].pitch;
         } else {
-            pitch = analysis.getMapping()->GetR()[noteIdx].pitch;
+            pitch = analysis.getAnalysisResults()->refList.events[noteIdx].pitch;
         }
     }
     pitchLabel->setText((QString("Pitch: %1").arg(pitchToNote(pitch).c_str())));

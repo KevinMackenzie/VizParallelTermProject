@@ -2,8 +2,10 @@
 #include "PianoRollScene.h"
 #include "MidiNoteGraphicsItem.h"
 
-PianoRollScene::PianoRollScene(QRectF rect, const MidiAnalysis& a, int low_note, int high_note, int subdiv, QWidget *parent)
-        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv), analysis(a) {
+PianoRollScene::PianoRollScene(QRectF rect, const MidiAnalysis &a, int low_note, int high_note, int subdiv,
+                               QWidget *parent)
+        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv),
+          analysis(a) {
 
     addItem(&pitchAxis);
     this->drawStaff();
@@ -25,7 +27,7 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
         if (!f[track][i].isNoteOn()) {
             continue;
         }
-         // Get note values
+        // Get note values
         int pitch = f[track][i].getP1();
         float startsec = f[track][i].seconds;
         float duration = f[track][i].getDurationInSeconds();
@@ -33,13 +35,13 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
 
         // Calculate Coordinates
         qreal full_height = isBlackKey(pitch) ? blackKeySize.height() : whiteKeySize.height();
-        qreal top = getYFromPitch(pitch) + ((float)idx/subdiv) * full_height;
+        qreal top = getYFromPitch(pitch) + ((float) idx / subdiv) * full_height;
         qreal left = startsec * width_scale + this->sceneRect().left() + whiteKeySize.width();
         qreal w = duration * width_scale;
 
         // Draw items
         auto item = new MidiNoteGraphicsItem(
-                QRectF(left, top, w, (1.f/subdiv) * full_height), idx, aaa++);
+                QRectF(left, top, w, (1.f / subdiv) * full_height), idx, aaa++);
         item->setBrush(*greenBrush);
         item->setPen(*pen);
         this->addItem(item);
@@ -95,15 +97,18 @@ void PianoRollScene::updateScale(QPointF origin, QSizeF scale) {
 }
 
 void PianoRollScene::showConnectivity(int slotNum, int noteIdx) {
-    if (!analysis.getMapping() || slotNum > 1) return;
-    auto edges = (slotNum == 0) ? analysis.getMapping()->GetLNodeEdges(noteIdx) : analysis.getMapping()->GetRNodeEdges(noteIdx);
+    if (!analysis.getAnalysisResults() || slotNum > 1) return;
+    auto edges = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLNodeEdges(noteIdx)
+                                : analysis.getAnalysisResults()->mapping.GetRNodeEdges(noteIdx);
     for (auto it : edges) {
         midiItems[(slotNum + 1) % 2][it.to]->setBrush(MidiNoteGraphicsItem::yellow);
     }
 }
+
 void PianoRollScene::hideConnectivity(int slotNum, int noteIdx) {
-    if (!analysis.getMapping()) return;
-    auto edges = (slotNum == 0) ? analysis.getMapping()->GetLNodeEdges(noteIdx) : analysis.getMapping()->GetRNodeEdges(noteIdx);
+    if (!analysis.getAnalysisResults()) return;
+    auto edges = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLNodeEdges(noteIdx)
+                                : analysis.getAnalysisResults()->mapping.GetRNodeEdges(noteIdx);
     for (auto it : edges) {
         midiItems[(slotNum + 1) % 2][it.to]->setBrush(MidiNoteGraphicsItem::green);
     }

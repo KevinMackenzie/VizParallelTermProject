@@ -129,10 +129,10 @@ struct pt {
 
 // The naive diagnal line method for the edit-distance algorithm.  Note: This won't parallelize the O(n) operation on each tile
 WeightedBipartiteGraph<MidiChar> editDistancePDiagnal(const MidiString &ref, const MidiString &inp) {
-  if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(ref, inp);
+  if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(&ref, &inp);
   std::vector<std::vector<MemoVal> > memo(ref.size() + 1,
                                           std::vector<MemoVal>(inp.size() + 1,
-                                                               {WeightedBipartiteGraph<MidiChar>(ref, inp)}));
+                                                               {WeightedBipartiteGraph<MidiChar>(&ref, &inp)}));
 
   // TODO: handle non-square case
   for (size_t d_idx = 1; d_idx < 2 * ref.size(); ++d_idx) {
@@ -169,10 +169,10 @@ WeightedBipartiteGraph<MidiChar> editDistancePDiagnal(const MidiString &ref, con
 }
 
 WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiString &inp) {
-  if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(ref, inp);
+  if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(&ref, &inp);
   std::vector<std::vector<MemoVal> > memo(ref.size() + 1,
                                           std::vector<MemoVal>(inp.size() + 1,
-                                                               {WeightedBipartiteGraph<MidiChar>(ref, inp)}));
+                                                               {WeightedBipartiteGraph<MidiChar>(&ref, &inp)}));
 
   // Fill the base-case row / column in the memo
   // for (size_t i = 0; i < ref.size() + 1; ++i) {

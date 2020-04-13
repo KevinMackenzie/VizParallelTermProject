@@ -30,8 +30,9 @@ private:
   }
 
 public:
-  WeightedBipartiteGraph(const std::vector<T>& l, const std::vector<T>& r) : left(&l), right(&r), ltr(l.size()),
-                                                                             rtl(r.size()), total_weight(0) {}
+  WeightedBipartiteGraph() : left(nullptr), right(nullptr), total_weight(0) {}
+  WeightedBipartiteGraph(const std::vector<T>* l, const std::vector<T>* r) : left(l), right(r), ltr(l->size()),
+                                                                             rtl(r->size()), total_weight(0) {}
 
   WeightedBipartiteGraph(const WeightedBipartiteGraph<T>& other) : ltr(other.ltr), rtl(other.rtl),
                                                                    left(other.left), right(other.right),

@@ -8,15 +8,24 @@
 // The "Document" of the program
 class MidiAnalysis {
 public:
+    // TODO: this struct may be better put somewhere in the lib
+    struct out_data {
+        WeightedBipartiteGraph<SimpleMidiEvent> mapping;
+        SimpleMidiEventList refList;
+        SimpleMidiEventList inpList;
+    };
+
     MidiAnalysis() = default;
 
-    void setReference(const smf::MidiFile& ref);
-    void setInput(const smf::MidiFile& inp);
+    void setReference(const smf::MidiFile &ref);
+
+    void setInput(const smf::MidiFile &inp);
 
     const std::optional<smf::MidiFile> &getReference() const { return reference; }
+
     const std::optional<smf::MidiFile> &getInput() const { return input; }
 
-    const std::optional<WeightedBipartiteGraph<SimpleMidiEvent> > &getMapping() const { return mapping; }
+    const std::optional<out_data> getAnalysisResults() const {return odata; }
 
     void Analyze();
 
@@ -24,7 +33,7 @@ private:
     std::optional<smf::MidiFile> reference;
     std::optional<smf::MidiFile> input;
 
-    std::optional<WeightedBipartiteGraph<SimpleMidiEvent> > mapping;
+    std::optional<out_data> odata;
     // TODO: eventually stuff like tempo-tracking
 };
 
