@@ -4,18 +4,20 @@
 
 #include <QGroupBox>
 #include <QLabel>
+#include "MidiAnalysis.h"
 
 class NoteInfo : public QGroupBox {
 Q_OBJECT
 
 public:
-    explicit NoteInfo(QWidget *parent = nullptr);
+    explicit NoteInfo(const MidiAnalysis& analysis, QWidget *parent = nullptr);
 
 public slots:
-    void displayNote(int pitch);
+    void displayNote(int slotNum, int noteIdx);
 
 private:
     QLabel * pitchLabel;
+    const MidiAnalysis& analysis;
 };
 
 

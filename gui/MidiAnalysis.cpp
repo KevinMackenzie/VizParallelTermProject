@@ -2,9 +2,6 @@
 
 #include "MidiAnalysis.h"
 
-
-MidiAnalysis::MidiAnalysis() {}
-
 void MidiAnalysis::Analyze() {
     if (!reference || !input)
         return;

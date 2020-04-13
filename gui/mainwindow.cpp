@@ -21,12 +21,12 @@ MainWindow::MainWindow(QWidget *parent)
     setObjectName("MainWindow");
     setWindowTitle("MIDI Comparison");
 
-    scene = new PianoRollScene(QRectF(0, 0, 5000, 500), 21, 108, 2, this);
+    scene = new PianoRollScene(QRectF(0, 0, 5000, 500), analysis, 21, 108, 2, this);
     gview = new PianoRollView(scene, this);
     this->setCentralWidget(gview);
     gview->centerOn(0, 250);
 
-    noteInfo = new NoteInfo(this);
+    noteInfo = new NoteInfo(analysis, this);
     noteInfoDock = new QDockWidget(tr("Note Information"), this);
     noteInfoDock->setWidget(noteInfo);
     this->addDockWidget(Qt::TopDockWidgetArea, noteInfoDock);
@@ -34,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupMenuBar();
     setupToolBar();
     // openFile("midi_files/test1.mid", 0); //TODO: Remove after testing
+    openFile("midi_files/test1.mid", 0);
+    openFile("midi_files/test2.mid", 1);
 }
 
 void MainWindow::setupMenuBar() {
@@ -102,6 +104,7 @@ void MainWindow::openFile(std::string fileName, int idx) {
     file1.read(fileName);
     file1.doTimeAnalysis();
     file1.linkNotePairs();
+    scene->clearMidiNotes(idx);
     if (idx == 0) {
         analysis.setReference(file1);
     } else if (idx == 1) {
@@ -110,8 +113,6 @@ void MainWindow::openFile(std::string fileName, int idx) {
         std::cout << "ERROR: invalid file slot" << std::endl;
     }
     analysis.Analyze();
-
-    scene->clearMidiNotes(idx);
     scene->drawMidiNotes(file1, noteInfo, idx);
 }
 

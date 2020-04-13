@@ -13,6 +13,7 @@ void PianoRollView::scrollContentsBy(int dx, int dy) {
 }
 
 void PianoRollView::updateAxes() {
+    if (!scene()) return;
     auto sc = (PianoRollScene*)scene();
     auto tl = mapToScene(rect().topLeft());
     auto br = mapToScene(rect().bottomRight());

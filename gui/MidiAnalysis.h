@@ -8,7 +8,7 @@
 // The "Document" of the program
 class MidiAnalysis {
 public:
-    MidiAnalysis();
+    MidiAnalysis() = default;
 
     void setReference(const smf::MidiFile& ref);
     void setInput(const smf::MidiFile& inp);

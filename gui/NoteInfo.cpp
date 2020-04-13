@@ -3,8 +3,8 @@
 #include <Analysis.h>
 #include "NoteInfo.h"
 
-NoteInfo::NoteInfo(QWidget *parent)
-        : QGroupBox(parent) {
+NoteInfo::NoteInfo(const MidiAnalysis& a, QWidget *parent)
+        : QGroupBox(parent), analysis(a) {
 
     QVBoxLayout *vbox = new QVBoxLayout;
     pitchLabel = new QLabel(tr("Hover over note to see pitch"));
@@ -13,7 +13,15 @@ NoteInfo::NoteInfo(QWidget *parent)
 
 }
 
-void NoteInfo::displayNote(int pitch) {
+void NoteInfo::displayNote(int slotNum, int noteIdx) {
+    int pitch = 0;
+    if (analysis.getMapping()) {
+        if (slotNum == 0) {
+            pitch = analysis.getMapping()->GetL()[noteIdx].pitch;
+        } else {
+            pitch = analysis.getMapping()->GetR()[noteIdx].pitch;
+        }
+    }
     pitchLabel->setText((QString("Pitch: %1").arg(pitchToNote(pitch).c_str())));
 }
 

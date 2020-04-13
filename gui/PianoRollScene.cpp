@@ -2,8 +2,8 @@
 #include "PianoRollScene.h"
 #include "MidiNoteGraphicsItem.h"
 
-PianoRollScene::PianoRollScene(QRectF rect, int low_note, int high_note, int subdiv, QWidget *parent)
-        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv) {
+PianoRollScene::PianoRollScene(QRectF rect, const MidiAnalysis& a, int low_note, int high_note, int subdiv, QWidget *parent)
+        : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv), analysis(a) {
 
     addItem(&pitchAxis);
     this->drawStaff();
@@ -20,6 +20,7 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
     float width_scale = (this->width() - blackKeySize.width()) / f.getFileDurationInSeconds();
 
     int track = 0;
+    int aaa = 0; // TODO: connect this with the actual indexing instead of loading from file twice
     for (int i = 0; i < f[track].size(); i++) {
         if (!f[track][i].isNoteOn()) {
             continue;
@@ -38,15 +39,18 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
 
         // Draw items
         auto item = new MidiNoteGraphicsItem(
-                QRectF(left, top, w, (1.f/subdiv) * full_height),
-                f[track][i].getKeyNumber());
+                QRectF(left, top, w, (1.f/subdiv) * full_height), idx, aaa++);
         item->setBrush(*greenBrush);
         item->setPen(*pen);
         this->addItem(item);
         this->midiItems[idx].push_back(item);
 
         // Connect mouseover signal to noteInfo
-        connect(item, &MidiNoteGraphicsItem::moused, toConnect, &NoteInfo::displayNote);
+        connect(item, &MidiNoteGraphicsItem::mouseEnter, toConnect, &NoteInfo::displayNote);
+
+        // TODO: This probably isn't the best place to handle this signal
+        connect(item, &MidiNoteGraphicsItem::mouseEnter, this, &PianoRollScene::showConnectivity);
+        connect(item, &MidiNoteGraphicsItem::mouseExit, this, &PianoRollScene::hideConnectivity);
     }
 }
 
@@ -88,4 +92,19 @@ qreal PianoRollScene::getYFromPitch(int pitch) {
 void PianoRollScene::updateScale(QPointF origin, QSizeF scale) {
     pitchAxis.setX(origin.x());
     pitchAxis.updateXScale(scale.width());
+}
+
+void PianoRollScene::showConnectivity(int slotNum, int noteIdx) {
+    if (!analysis.getMapping() || slotNum > 1) return;
+    auto edges = (slotNum == 0) ? analysis.getMapping()->GetLNodeEdges(noteIdx) : analysis.getMapping()->GetRNodeEdges(noteIdx);
+    for (auto it : edges) {
+        midiItems[(slotNum + 1) % 2][it.to]->setBrush(MidiNoteGraphicsItem::yellow);
+    }
+}
+void PianoRollScene::hideConnectivity(int slotNum, int noteIdx) {
+    if (!analysis.getMapping()) return;
+    auto edges = (slotNum == 0) ? analysis.getMapping()->GetLNodeEdges(noteIdx) : analysis.getMapping()->GetRNodeEdges(noteIdx);
+    for (auto it : edges) {
+        midiItems[(slotNum + 1) % 2][it.to]->setBrush(MidiNoteGraphicsItem::green);
+    }
 }

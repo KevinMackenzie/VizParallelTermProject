@@ -9,10 +9,13 @@
 class MidiNoteGraphicsItem : public QObject, public QGraphicsRectItem {
 Q_OBJECT
 public:
-    explicit MidiNoteGraphicsItem(const QRectF &rc, int p, QGraphicsItem *parent = nullptr);
+    explicit MidiNoteGraphicsItem(const QRectF &rc, int slotNum, int noteIdx, QGraphicsItem *parent = nullptr);
 
-    const QBrush green = QBrush(QColor(0, 127, 0));
-    const QBrush red = QBrush(QColor(255, 0, 0));
+    const int slotNum;
+    const int noteIdx;
+    static const QBrush green;
+    static const QBrush yellow;
+    static const QBrush red;
 
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
@@ -20,10 +23,8 @@ public:
 
 signals:
 
-    void moused(int pitch);
-
-private:
-    const int pitch;
+    void mouseEnter(int slotNum, int noteIdx);
+    void mouseExit(int slotNum, int noteIdx);
 };
 
 
