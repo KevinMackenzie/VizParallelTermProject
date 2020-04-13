@@ -84,3 +84,8 @@ qreal PianoRollScene::getYFromPitch(int pitch) {
     }
     return whiteKeyY;
 }
+
+void PianoRollScene::updateScale(QPointF origin, QSizeF scale) {
+    pitchAxis.setX(origin.x());
+    pitchAxis.updateXScale(scale.width());
+}

@@ -18,6 +18,8 @@ public:
     void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx);
     void clearMidiNotes(int idx);
 
+    void updateScale(QPointF origin, QSizeF scale);
+
 private:
     qreal getYFromPitch(int pitch);
 

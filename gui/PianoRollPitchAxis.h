@@ -9,7 +9,7 @@ public:
     explicit PianoRollPitchAxis(QRectF rect, int lowNote, int highNote, QGraphicsItem *parent = nullptr);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
-    void setLeft(float l) { moveBy(l - x(), 0); }
+    void updateXScale(qreal xScale) { this->xScale = xScale; }
 
     QSizeF getBlackKeySize() const { return blackKeySize; }
     QSizeF getWhiteKeySize() const { return whiteKeySize; }
@@ -21,6 +21,7 @@ private:
     int highNote;
     QSizeF whiteKeySize;
     QSizeF blackKeySize;
+    qreal xScale;
     int numWhiteKeys;
 };
 

@@ -39,7 +39,7 @@ void PianoRollPitchAxis::paint(QPainter *painter, const QStyleOptionGraphicsItem
     float top = this->rect().top();
     for (int i = highNote; i >= lowNote; --i) {
         if (!isBlackKey(i)) {
-            painter->drawRect(left, top, whiteKeySize.width(), whiteKeySize.height());
+            painter->drawRect(left, top, whiteKeySize.width() * xScale, whiteKeySize.height());
             top += whiteKeySize.height();
         }
     }
@@ -49,7 +49,7 @@ void PianoRollPitchAxis::paint(QPainter *painter, const QStyleOptionGraphicsItem
     top = this->rect().top();
     for (int i = highNote; i >= lowNote; --i) {
         if (isBlackKey(i)) {
-            painter->drawRect(left, top - blackKeySize.height() / 2, blackKeySize.width(), blackKeySize.height());
+            painter->drawRect(left, top - blackKeySize.height() / 2, blackKeySize.width() * xScale, blackKeySize.height());
         } else {
             top += whiteKeySize.height();
         }

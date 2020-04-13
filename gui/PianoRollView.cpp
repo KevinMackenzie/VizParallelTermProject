@@ -13,7 +13,14 @@ void PianoRollView::scrollContentsBy(int dx, int dy) {
 }
 
 void PianoRollView::updateAxes() {
-    ((PianoRollScene *) scene())->pitchAxis.setLeft(this->mapToScene(0, 0).x());
+    auto sc = (PianoRollScene*)scene();
+    auto tl = mapToScene(rect().topLeft());
+    auto br = mapToScene(rect().bottomRight());
+    QSizeF sz;
+    sz.setWidth((br.x() - tl.x()) / rect().width());
+    sz.setHeight((br.y() - tl.y()) / rect().height());
+    sc->updateScale(mapToScene(0, 0), sz);
+    // sc->pitchAxis.setX(this->mapToScene(0, 0).x());
 }
 
 // void PianoRollView::drawForeground(QPainter *painter, const QRectF &rect) {
