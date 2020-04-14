@@ -97,19 +97,25 @@ void PianoRollScene::updateScale(QPointF origin, QSizeF scale) {
 }
 
 void PianoRollScene::showConnectivity(int slotNum, int noteIdx) {
-    if (!analysis.getAnalysisResults() || slotNum > 1) return;
-    auto edges = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLNodeEdges(noteIdx)
-                                : analysis.getAnalysisResults()->mapping.GetRNodeEdges(noteIdx);
-    for (auto it : edges) {
-        midiItems[(slotNum + 1) % 2][it.to]->setBrush(MidiNoteGraphicsItem::yellow);
+    if (!analysis.getAnalysisResults()) return;
+    auto cc = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLCC(noteIdx)
+                             : analysis.getAnalysisResults()->mapping.GetRCC(noteIdx);
+    for (auto it : cc.lNodes) {
+        midiItems[0][it]->setBrush(MidiNoteGraphicsItem::yellow);
+    }
+    for (auto it : cc.rNodes) {
+        midiItems[1][it]->setBrush(MidiNoteGraphicsItem::yellow);
     }
 }
 
 void PianoRollScene::hideConnectivity(int slotNum, int noteIdx) {
     if (!analysis.getAnalysisResults()) return;
-    auto edges = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLNodeEdges(noteIdx)
-                                : analysis.getAnalysisResults()->mapping.GetRNodeEdges(noteIdx);
-    for (auto it : edges) {
-        midiItems[(slotNum + 1) % 2][it.to]->setBrush(MidiNoteGraphicsItem::green);
+    auto cc = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLCC(noteIdx)
+                                : analysis.getAnalysisResults()->mapping.GetRCC(noteIdx);
+    for (auto it : cc.lNodes) {
+        midiItems[0][it]->setBrush(MidiNoteGraphicsItem::green);
+    }
+    for (auto it : cc.rNodes) {
+        midiItems[1][it]->setBrush(MidiNoteGraphicsItem::green);
     }
 }
