@@ -60,6 +60,7 @@ MidiString constructMidiString(std::vector<SimpleMidiEvent> evts) {
     ret.reserve(evts.size());
 
     MidiChar curr;
+    uint32_t prev_onset = 0;
     for (auto evt : evts) {
         for (auto &i : curr.keyboardContext) {
             if (i.duration + i.onset < evt.onset) {
@@ -67,6 +68,8 @@ MidiString constructMidiString(std::vector<SimpleMidiEvent> evts) {
             }
         }
         curr.event = evt;
+        curr.prev_onset = prev_onset;
+        prev_onset = curr.event.onset;
         ret.emplace_back(curr);
     }
     return ret;
