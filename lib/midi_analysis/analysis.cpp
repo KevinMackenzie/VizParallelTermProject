@@ -43,7 +43,9 @@ struct MemoVal {
 };
 
 float weight_func(const MidiChar &rch, const MidiChar &ich) {
-    float pitch_comp = abs(rch.event.pitch - ich.event.pitch);
+    // TODO: this is Ok, but it has limitations since pitches that are off-by-one get erroneously matched when better
+    // TODO:    matches exist.  Probably has to do with interplay with time analysis
+    float pitch_comp = powf(abs(rch.event.pitch - ich.event.pitch), 1.5);
     float time_comp = 0;
     if (rch.prev_onset != 0 && ich.prev_onset != 0) {
         // This is flawed b/c two notes could be very far apart, but when aligned at the previous onset, they could
@@ -78,7 +80,7 @@ void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val
     float min_weight = INFINITY;
     for (size_t i = curr_ref_idx; i > 0; --i) { // Note: We don't look at the "CURRENT" ref index, only up to
         // Restrict to window
-        if (ref[i-1].event.onset - inp_val.event.onset > time_thresh && i != curr_ref_idx) break;
+        if (ref[i-1].event.onset - ref[curr_ref_idx-1].event.onset > time_thresh) break;
         // TODO: maybe additional weight to discourage unnecessary "swapping" of values
         float w = weight_func(ref[i-1], inp_val);
         if (w < min_weight) {
@@ -113,7 +115,7 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
     float min_weight = INFINITY;
     for (size_t i = curr_inp_idx; i > 0; --i) { // Note: only looks at 'prev' and not 'curr'
         // Restrict to window
-        if (inp[i-1].event.onset - ref_val.event.onset > time_thresh && i != curr_inp_idx) break;
+        if (inp[i-1].event.onset - inp[curr_inp_idx-1].event.onset > time_thresh) break;
         // TODO: maybe additional weight to discourage unnecessary "swapping" of values
         float w = weight_func(ref_val, inp[i-1]);
         if (w < min_weight) {
