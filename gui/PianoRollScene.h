@@ -6,6 +6,7 @@
 #include <MidiFile.h>
 #include "NoteInfo.h"
 #include "PianoRollPitchAxis.h"
+#include "Scrubber.h"
 
 class PianoRollView;
 class MidiNoteGraphicsItem;
@@ -35,6 +36,7 @@ private:
     PianoRollPitchAxis pitchAxis;
     std::vector<std::vector<MidiNoteGraphicsItem*> > midiItems;
     const MidiAnalysis& analysis;
+    Scrubber scrubber;
 };
 
 

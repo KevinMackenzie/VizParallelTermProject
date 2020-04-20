@@ -7,7 +7,7 @@
 
 void PianoRollView::scrollContentsBy(int dx, int dy) {
     QGraphicsView::scrollContentsBy(dx, dy);
-    std::cout << "Moved by " << dx << std::endl;
+//    std::cout << "Moved by " << dx << std::endl;
     // ((PianoRollScene*)scene())->pitchAxis.moveBy(-dx, 0);
     updateAxes();
 }

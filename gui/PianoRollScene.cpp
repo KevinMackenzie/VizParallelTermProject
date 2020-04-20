@@ -5,9 +5,10 @@
 PianoRollScene::PianoRollScene(QRectF rect, const MidiAnalysis &a, int low_note, int high_note, int subdiv,
                                QWidget *parent)
         : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv),
-          analysis(a) {
+          analysis(a), scrubber(nullptr){
 
     addItem(&pitchAxis);
+    addItem(&scrubber);
     this->drawStaff();
 }
 
