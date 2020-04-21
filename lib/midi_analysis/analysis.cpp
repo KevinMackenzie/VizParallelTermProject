@@ -26,6 +26,10 @@ void filterTempo(MidiString &str) {
             time_accum += str[j].event.onset - str[j - 1].event.onset;
             weight_accum += filterWeight(myOnset - (str[j].event.onset + str[j - 1].event.onset) / 2.f);
         }
+        // We might just want to assume general position
+        if (time_accum == 0) {
+            time_accum = 1;
+        }
         str[i].tempo = weight_accum / time_accum;
     }
 
@@ -34,18 +38,39 @@ void filterTempo(MidiString &str) {
         str[i].tempo = str[filterSize].tempo;
     }
 }
+struct pt {
+    size_t r, i;
+};
 
+#define REORDER_TIME_THRESH 50
+#define ORPHAN_COST 50
 struct MemoVal {
     WeightedBipartiteGraph<MidiChar> g;
     float extra_weight;
+    std::vector<pt> path;
 
-    float totalWeight() const { return extra_weight + g.GetTotalWeight(); }
+    float totalWeight(int ref_time, int inp_time) const {
+        // count the number of orphans that aren't within the reorder threshold
+        // TODO: this would be a LOT faster if we did some bookkeeping instead
+        int num_orphans = 0;
+        for (size_t i = 0; i < g.GetL().size(); ++i) {
+            if (ref_time - g.GetL()[i].event.onset > REORDER_TIME_THRESH && g.GetLNodeDegree(i) == 0) {
+                ++num_orphans;
+            }
+        }
+        for (size_t i = 0; i < g.GetR().size(); ++i) {
+            if (inp_time - g.GetR()[i].event.onset > REORDER_TIME_THRESH && g.GetRNodeDegree(i) == 0) {
+                ++num_orphans;
+            }
+        }
+        return extra_weight + g.GetTotalWeight() + num_orphans * ORPHAN_COST;
+    }
 };
 
 float weight_func(const MidiChar &rch, const MidiChar &ich) {
     // TODO: this is Ok, but it has limitations since pitches that are off-by-one get erroneously matched when better
     // TODO:    matches exist.  Probably has to do with interplay with time analysis
-    float pitch_comp = powf(abs(rch.event.pitch - ich.event.pitch), 1.5);
+    float pitch_comp = powf(abs((int)rch.event.pitch - ich.event.pitch), 2);
     float time_comp = 0;
     if (rch.prev_onset != 0 && ich.prev_onset != 0) {
         // This is flawed b/c two notes could be very far apart, but when aligned at the previous onset, they could
@@ -61,12 +86,12 @@ float weight_func(const MidiChar &rch, const MidiChar &ich) {
         //  local onset discrepancies, so we use the nature of edit-distance to take care of large discrepancies
         auto expected_onset_interval = (rch.event.onset - rch.prev_onset) * (rch.tempo / ich.tempo);
         auto expected_onset = ich.prev_onset + expected_onset_interval;
-        time_comp = fabsf(expected_onset - ich.event.onset) / 10.f;
-        if (pitch_comp == 0)
-            std::cout << "Time Diff: " << time_comp << std::endl;
+        time_comp = fabsf(expected_onset - ich.event.onset) / 100.f;
+        // if (pitch_comp == 0)
+        //   std::cout << "Time Diff: " << time_comp << std::endl;
     }
     // float time_comp = abs(ch0.event.onset - ch1.event.onset) / 100.f;
-    return pitch_comp + time_comp;
+    return pitch_comp; // + time_comp;
 }
 
 void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val, const std::vector<MidiChar> &ref,
@@ -77,18 +102,23 @@ void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val
 
     // Find the minimum edge weight
     size_t min_idx = 0;
-    float min_weight = INFINITY;
+    int closest_pitch_diff = 10000;
     for (size_t i = curr_ref_idx; i > 0; --i) { // Note: We don't look at the "CURRENT" ref index, only up to
         // Restrict to window
-        if (ref[i-1].event.onset - ref[curr_ref_idx-1].event.onset > time_thresh) break;
-        // TODO: maybe additional weight to discourage unnecessary "swapping" of values
-        float w = weight_func(ref[i-1], inp_val);
-        if (w < min_weight) {
+        if (ref[curr_ref_idx-1].event.onset - ref[i-1].event.onset > time_thresh) break;
+
+        // The whole point of re-ordering is to match out-of-order pitches, so only consider pitch on re-order
+        auto w = abs((int)ref[i-1].event.pitch - inp_val.event.pitch);
+        if (w < closest_pitch_diff) {
             min_idx = i-1;
-            min_weight = w;
+            closest_pitch_diff = w;
+            if (w == 0) {
+                break;
+            }
         }
     }
     // Add it to the graph
+    auto min_weight = weight_func(ref[min_idx], inp_val);
     m.g.AddEdge(min_idx, curr_inp_idx, min_weight);
 
     // Find all higher cost edges that don't orphan nodes if removed
@@ -112,18 +142,23 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
 
     // Find the minimum edge weight
     size_t min_idx = 0;
-    float min_weight = INFINITY;
+    int closest_pitch_diff = 10000;
     for (size_t i = curr_inp_idx; i > 0; --i) { // Note: only looks at 'prev' and not 'curr'
         // Restrict to window
-        if (inp[i-1].event.onset - inp[curr_inp_idx-1].event.onset > time_thresh) break;
-        // TODO: maybe additional weight to discourage unnecessary "swapping" of values
-        float w = weight_func(ref_val, inp[i-1]);
-        if (w < min_weight) {
+        if (inp[curr_inp_idx-1].event.onset - inp[i-1].event.onset > time_thresh) break;
+
+        // The whole point of re-ordering is to match out-of-order pitches, so only consider pitch on re-order
+        auto w = abs((int)ref_val.event.pitch - inp[i-1].event.pitch);
+        if (w < closest_pitch_diff) {
             min_idx = i-1;
-            min_weight = w;
+            closest_pitch_diff = w;
+            if (w == 0) {
+                break;
+            }
         }
     }
     // Add it to the graph
+    auto min_weight = weight_func(ref_val, inp[min_idx]);
     m.g.AddEdge(curr_ref_idx, min_idx, min_weight);
 
     // Find all higher cost edges that don't orphan nodes if removed
@@ -146,28 +181,23 @@ void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vecto
 
     // Insertion: Connect new input to existing ref
     MemoVal ref_m1 = memo[ref_idx - 1][inp_idx];
-    addMinWeightInsert(ref_m1, inp_idx - 1, inp_val, ref, ref_idx - 1, 500);
-    std::cout << ref_m1.g.GetTotalWeight() << std::endl;
-    ref_m1.extra_weight += 50;
+    addMinWeightInsert(ref_m1, inp_idx - 1, inp_val, ref, ref_idx - 1, REORDER_TIME_THRESH);
 
     // Deletion: Connect new ref to existing input
     MemoVal inp_m1 = memo[ref_idx][inp_idx - 1];
-    addMinWeightDelete(inp_m1, ref_idx - 1, ref_val, inp, inp_idx - 1, 500);
-    std::cout << inp_m1.g.GetTotalWeight() << std::endl;
-    inp_m1.extra_weight += 50;
+    addMinWeightDelete(inp_m1, ref_idx - 1, ref_val, inp, inp_idx - 1, REORDER_TIME_THRESH);
 
     // Substitution (or match)
     MemoVal prev = memo[ref_idx - 1][inp_idx - 1];
-    std::cout << prev.g.GetTotalWeight() << std::endl;
-    addMinWeightInsert(prev, inp_idx - 1, inp_val, ref, ref_idx, 500);
-    addMinWeightDelete(prev, ref_idx - 1, ref_val, inp, inp_idx, 500);
+    addMinWeightInsert(prev, inp_idx - 1, inp_val, ref, ref_idx, REORDER_TIME_THRESH);
+    addMinWeightDelete(prev, ref_idx - 1, ref_val, inp, inp_idx, REORDER_TIME_THRESH);
 
-    // TODO: how do we adjust the weight for the insertion / deletion case?  Or do we event want to?
-    // TODO: we probably want to make "orphan" nodes be fairly costly: maybe proportional to some "importance" value based on dynamic, timing, etc
-    // TODO: do we bake this into the graph?
-    float ins_weight = ref_m1.totalWeight();
-    float del_weight = inp_m1.totalWeight();
-    float mat_weight = prev.totalWeight();
+    // Handle cost of insertion / deletion in a delayed fashion by discouraging orphaned nodes past the reorder threshold
+    float ins_weight = ref_m1.totalWeight(ref_val.event.onset, inp_val.event.onset);
+    float del_weight = inp_m1.totalWeight(ref_val.event.onset, inp_val.event.onset);
+    float mat_weight = prev.totalWeight(ref_val.event.onset, inp_val.event.onset);
+
+    // std::cout << "Insert: " << ins_weight << "; Delete: " << del_weight << "; Match: " << mat_weight << std::endl;
 
     // std::cout << "Comparing " << (int) ref_val.event.pitch << " and " << (int) inp_val.event.pitch;
     if (ins_weight < del_weight && ins_weight < mat_weight) {
@@ -180,12 +210,10 @@ void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vecto
         // std::cout << "; Chose Substitution / Match";
         memo[ref_idx][inp_idx] = prev;
     }
+    memo[ref_idx][inp_idx].path.push_back({ref_idx, inp_idx});
     // std::cout << std::endl;
 }
 
-struct pt {
-    size_t r, i;
-};
 #define PARALLEL_THRESHOLD 20
 
 // The naive diagnal line method for the edit-distance algorithm.  Note: This won't parallelize the O(n) operation on each tile
@@ -248,18 +276,23 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
     //      and filter different kinds of tempo differences.
 
     // Fill the base-case row / column in the memo
-    // for (size_t i = 0; i < ref.size() + 1; ++i) {
-    //   memo[i][0].g =;
-    // }
-    // for (size_t i = 0; i < inp.size() + 1; ++i) {
-    //   memo[0][i].g =
-    // }
+    for (size_t i = 0; i < ref.size() + 1; ++i) {
+      memo[i][0].path.push_back({i, 0});
+    }
+    for (size_t i = 0; i < inp.size() + 1; ++i) {
+      memo[0][i].path.push_back({0, i});
+    }
 
     for (size_t ref_idx = 1; ref_idx <= ref.size(); ++ref_idx) {
-        size_t inp_idx = 1;
         for (size_t inp_idx = 1; inp_idx <= inp.size(); ++inp_idx) {
             editDistanceTile(memo, ref, inp, ref_idx, inp_idx);
         }
     }
-    return memo.back().back().g;
+    auto ret = memo.back().back();
+    std::cout << "Real Result: " << ret.totalWeight(100'000'000, 100'000'000) << std::endl;
+    std::cout << "Path: " << std::endl;
+    for (auto p : ret.path) {
+        std::cout << "(" << p.r << ", " << p.i << ")" << std::endl;
+    }
+    return ret.g;
 }

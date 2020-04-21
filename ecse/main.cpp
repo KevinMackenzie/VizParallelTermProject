@@ -41,7 +41,9 @@ int main(int argc, char **argv) {
             std::cout << "to " << pitchToNote(inp[a.to].event.pitch) << " (" << inp[a.to].event.onset << ")";
             weight_func(ref[i], inp[a.to]);
         }
+        std::cout << std::endl;
     }
+
 
     std::ofstream ofile("graph.dot");
     PrintGraphViz(g, ofile);
