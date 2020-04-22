@@ -36,7 +36,7 @@ struct MidiChar {
 using MidiString = std::vector<MidiChar>;
 
 WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiString &inp);
-WeightedBipartiteGraph<MidiChar> editDistancePDiagnal(const MidiString &ref, const MidiString &inp);
+WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel);
 
 void filterTempo(MidiString& str);
 float weight_func(const MidiChar &rch, const MidiChar &ich);

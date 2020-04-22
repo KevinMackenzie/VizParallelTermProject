@@ -28,6 +28,54 @@
 
 using namespace smf;
 
+struct pt {
+    size_t r, i;
+};
+void testDiagonal() {
+    size_t r = 4, i=4;
+    std::vector<pt> idxs;
+    std::vector<std::vector<int> > pixs(r+1, std::vector<int>(i+1, 0));
+    for (size_t d_idx = 1; d_idx <= r + i; ++d_idx) {
+        // Generate vector of indexes to process in this diagonal
+        idxs.clear();
+        idxs.reserve(d_idx);
+        pt p;
+        p.r = d_idx;
+        p.i = 1;
+        while (p.r > r) {
+            p.r--;
+            p.i++;
+        }
+        while (p.i <= i && p.r > 0) {
+            idxs.push_back(p);
+            p.r--;
+            p.i++;
+        }
+
+        for (auto idx : idxs) {
+            pixs[idx.r][idx.i] = d_idx;
+        }
+    }
+    std::cout << std::endl;
+    std::cout << "+";
+    for (auto c : pixs[0]) {
+        std::cout << "--+";
+    }
+    std::cout << std::endl;
+    for (auto r : pixs) {
+        std::cout << "|";
+        for (auto c : r) {
+            std::cout << std::setw(2) << c << "|";
+        }
+        std::cout << std::endl;
+        std::cout << "+";
+        for (auto c : r) {
+            std::cout << "--+";
+        }
+        std::cout << std::endl;
+    }
+}
+
 int main(int argc, char **argv) {
     Options options;
     options.process(argc, argv);
@@ -49,11 +97,8 @@ int main(int argc, char **argv) {
     std::cout << "Ref Size: " << ref.size() << std::endl;
     std::cout << "Inp Size: " << inp.size() << std::endl;
 
-    ref.resize(500);
-    inp.resize(500);
-
     clock_t start = clock();
-    auto g = editDistance(ref, inp);
+    auto g = editDistanceDiagonal(ref, inp, true);
     clock_t end = clock();
 
     std::cout << "Edit Distance Result: " << g.GetTotalWeight() << std::endl;

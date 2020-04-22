@@ -13,7 +13,7 @@ void MidiAnalysis::Analyze() {
     odata->inpList = convertMidiFile(*input);
     auto inpStr = constructMidiString(odata->inpList.events);
 
-    auto m = editDistance(refStr, inpStr);
+    auto m = editDistanceDiagonal(refStr, inpStr, true);
 
     odata->mapping = WeightedBipartiteGraph<SimpleMidiEvent>(&odata->refList.events, &odata->inpList.events);
     for (size_t i = 0; i < odata->refList.events.size(); ++i) {

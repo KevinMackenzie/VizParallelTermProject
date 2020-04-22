@@ -176,21 +176,21 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
     m.g.AddEdge(curr_ref_idx, min_idx, min_weight);
 }
 
-void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vector<MidiChar> &ref,
+void editDistanceTile(const MemoVal& mem_r1_i0, const MemoVal& mem_r0_i1, const MemoVal& mem_r1_i1, MemoVal& mem_r0_i0, const std::vector<MidiChar> &ref,
                       const std::vector<MidiChar> &inp, size_t ref_idx, size_t inp_idx) {
     auto ref_val = ref[ref_idx - 1];
     auto inp_val = inp[inp_idx - 1];
 
     // Insertion: Connect new input to existing ref
-    MemoVal ref_m1 = memo[ref_idx - 1][inp_idx];
+    MemoVal ref_m1 = mem_r1_i0;
     addMinWeightInsert(ref_m1, inp_idx - 1, inp_val, ref, ref_idx - 1, REORDER_TIME_THRESH);
 
     // Deletion: Connect new ref to existing input
-    MemoVal inp_m1 = memo[ref_idx][inp_idx - 1];
+    MemoVal inp_m1 = mem_r0_i1;
     addMinWeightDelete(inp_m1, ref_idx - 1, ref_val, inp, inp_idx - 1, REORDER_TIME_THRESH);
 
     // Substitution (or match)
-    MemoVal prev = memo[ref_idx - 1][inp_idx - 1];
+    MemoVal prev = mem_r1_i1;
     addMinWeightInsert(prev, inp_idx - 1, inp_val, ref, ref_idx, REORDER_TIME_THRESH);
     addMinWeightDelete(prev, ref_idx - 1, ref_val, inp, inp_idx, REORDER_TIME_THRESH);
 
@@ -204,16 +204,16 @@ void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vecto
     // std::cout << "Comparing " << (int) ref_val.event.pitch << " and " << (int) inp_val.event.pitch;
     if (ins_weight < del_weight && ins_weight < mat_weight) {
         // std::cout << "; Chose Insertion";
-        memo[ref_idx][inp_idx] = ref_m1;
+        mem_r0_i0 = ref_m1;
     } else if (del_weight < mat_weight) {
         // std::cout << "; Chose Deletion";
-        memo[ref_idx][inp_idx] = inp_m1;
+        mem_r0_i0 = inp_m1;
     } else {
         // std::cout << "; Chose Substitution / Match";
-        memo[ref_idx][inp_idx] = prev;
+        mem_r0_i0 = prev;
     }
 #ifdef TRACK_PATH
-    memo[ref_idx][inp_idx].path.push_back({ref_idx, inp_idx});
+    mem_r0_i0.path.push_back({ref_idx, inp_idx});
 #endif
     // std::cout << std::endl;
 }
@@ -221,16 +221,25 @@ void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vecto
 #define PARALLEL_THRESHOLD 20
 
 // The naive diagnal line method for the edit-distance algorithm.  Note: This won't parallelize the O(n) operation on each tile
-WeightedBipartiteGraph<MidiChar> editDistancePDiagnal(const MidiString &ref, const MidiString &inp) {
+WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel) {
     if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(&ref, &inp);
-    std::vector<std::vector<MemoVal> > memo(ref.size() + 1,
-                                            std::vector<MemoVal>(inp.size() + 1,
-                                                                 {WeightedBipartiteGraph<MidiChar>(&ref, &inp)}));
 
-    // TODO: handle non-square case
-    for (size_t d_idx = 1; d_idx < 2 * ref.size(); ++d_idx) {
-        // Generate vector of indexes to process in this diagnal
-        std::vector<pt> idxs;
+    // Use 3 memos and indexes to cycle through the 3 diagonal rows that will be in use during edit-distance
+    //  This brings memory usage from n^3 to n^2
+    // Note: The memo for any diagonal line will be at most the smallest dimension
+    struct { std::vector<MemoVal> m; size_t sz; } memo[3];
+    MemoVal blankMemoVal = {WeightedBipartiteGraph<MidiChar>(&ref, &inp)};
+    memo[0] = { std::vector<MemoVal>(std::min(ref.size(), inp.size()), blankMemoVal), 0};
+    memo[1] = memo[0];
+    memo[2] = memo[0];
+    size_t p1_gen = 1, p2_gen = 0, curr_gen = 2;
+
+    std::vector<pt> idxs;
+    for (size_t d_idx = 1; d_idx < ref.size() + inp.size(); ++d_idx) {
+        if (d_idx % 50 == 0)
+            std::cout << "Running Diagonal " << d_idx << " out of " << ref.size() + inp.size() << std::endl;
+        // Generate vector of indexes to process in this diagonal
+        idxs.clear();
         idxs.reserve(d_idx);
         pt p;
         p.r = d_idx;
@@ -239,26 +248,49 @@ WeightedBipartiteGraph<MidiChar> editDistancePDiagnal(const MidiString &ref, con
             p.r--;
             p.i++;
         }
-        while (p.i <= ref.size() && p.r > 0) {
+        while (p.i <= inp.size() && p.r > 0) {
             idxs.push_back(p);
             p.r--;
             p.i++;
         }
+        ssize_t p1, p2;
+        if (d_idx <= ref.size()) {
+            p1 = -1;
+            p2 = -1;
+        } else {
+            p1 = 0;
+            p2 = 1;
+        }
+        // Update the size of the current generation
+        memo[curr_gen].sz = idxs.size();
 
-        if (idxs.size() < PARALLEL_THRESHOLD) {
+        if (!parallel || idxs.size() < PARALLEL_THRESHOLD) {
             // Do it in serial
-            for (auto idx : idxs) {
-                editDistanceTile(memo, ref, inp, idx.r, idx.i);
+            for (ssize_t i = 0; i < idxs.size(); ++i) {
+                MemoVal& r1i0 = (i + p1 < 0) ? blankMemoVal : memo[p1_gen].m[i+p1];
+                MemoVal& r0i1 = (i+p1+1 >= memo[p1_gen].sz) ? blankMemoVal : memo[p1_gen].m[i+p1+1];
+                MemoVal& r1i1 = (i + p2 < 0 || i+p2 >= memo[p2_gen].sz) ? blankMemoVal : memo[p2_gen].m[i+p2];
+                editDistanceTile(r1i0, r0i1, r1i1, memo[curr_gen].m[i], ref, inp, idxs[i].r, idxs[i].i);
             }
         } else {
             // Do it in parallel
 #pragma omp parallel for
-            for (size_t i = 0; i < idxs.size(); ++i) {
-                editDistanceTile(memo, ref, inp, idxs[i].r, idxs[i].i);
+            for (ssize_t i = 0; i < idxs.size(); ++i) {
+                MemoVal& r1i0 = (i + p1 < 0) ? blankMemoVal : memo[p1_gen].m[i+p1];
+                MemoVal& r0i1 = (i+p1+1 >= memo[p1_gen].sz) ? blankMemoVal : memo[p1_gen].m[i+p1+1];
+                MemoVal& r1i1 = (i + p2 < 0 || i+p2 >= memo[p2_gen].sz) ? blankMemoVal : memo[p2_gen].m[i+p2];
+                editDistanceTile(r1i0, r0i1, r1i1, memo[curr_gen].m[i], ref, inp, idxs[i].r, idxs[i].i);
             }
         }
+        // Advance the memo data
+        curr_gen = (curr_gen + 1) % 3;
+        p1_gen = (p1_gen + 1) % 3;
+        p2_gen = (p2_gen + 1) % 3;
     }
-    return memo.back().back().g;
+    if (memo[p1_gen].sz != 1) {
+        std::cout << "WEIRD: " << memo[p1_gen].m.size() << std::endl;
+    }
+    return memo[p1_gen].m[0].g;
 }
 
 WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiString &inp) {
@@ -291,7 +323,7 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
 
     for (size_t ref_idx = 1; ref_idx <= ref.size(); ++ref_idx) {
         for (size_t inp_idx = 1; inp_idx <= inp.size(); ++inp_idx) {
-            editDistanceTile(memo, ref, inp, ref_idx, inp_idx);
+            editDistanceTile(memo[ref_idx-1][inp_idx], memo[ref_idx][inp_idx-1], memo[ref_idx-1][inp_idx-1], memo[ref_idx][inp_idx], ref, inp, ref_idx, inp_idx);
         }
     }
     auto ret = memo.back().back();
