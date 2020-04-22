@@ -109,3 +109,9 @@ Thumbs.db
 
 # My Weird FileSystem
 ._*
+
+
+# Run artifacts
+*.dot
+*.png
+vgcore*
