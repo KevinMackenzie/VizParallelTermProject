@@ -46,8 +46,9 @@ struct pt {
 #define ORPHAN_COST 50
 struct MemoVal {
     WeightedBipartiteGraph<MidiChar> g;
-    float extra_weight;
+#ifdef TRACK_PATH
     std::vector<pt> path;
+#endif
 
     float totalWeight(int ref_time, int inp_time) const {
         // count the number of orphans that aren't within the reorder threshold
@@ -63,7 +64,7 @@ struct MemoVal {
                 ++num_orphans;
             }
         }
-        return extra_weight + g.GetTotalWeight() + num_orphans * ORPHAN_COST;
+        return g.GetTotalWeight() + num_orphans * ORPHAN_COST;
     }
 };
 
@@ -117,21 +118,22 @@ void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val
             }
         }
     }
-    // Add it to the graph
     auto min_weight = weight_func(ref[min_idx], inp_val);
-    m.g.AddEdge(min_idx, curr_inp_idx, min_weight);
 
     // Find all higher cost edges that don't orphan nodes if removed
     std::vector<size_t> to_remove;
-    for (auto it : m.g.GetLNodeEdges(min_idx)) {
-        if (it.weight > min_weight && m.g.GetRNodeDegree(it.to) > 1) {
-            to_remove.emplace_back(it.to);
+    for (auto e : m.g.GetLNodeEdges(min_idx)) {
+        if (e.weight > min_weight && m.g.GetRNodeDegree(e.to) > 1) {
+            to_remove.emplace_back(e.to);
         }
     }
     // Remove them
     for (auto it : to_remove) {
         m.g.RemoveEdge(min_idx, it);
     }
+
+    // Add it to the graph
+    m.g.AddEdge(min_idx, curr_inp_idx, min_weight);
 }
 
 void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val, const std::vector<MidiChar> &inp,
@@ -157,9 +159,7 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
             }
         }
     }
-    // Add it to the graph
     auto min_weight = weight_func(ref_val, inp[min_idx]);
-    m.g.AddEdge(curr_ref_idx, min_idx, min_weight);
 
     // Find all higher cost edges that don't orphan nodes if removed
     std::vector<size_t> to_remove;
@@ -172,6 +172,8 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
     for (auto it : to_remove) {
         m.g.RemoveEdge(it, min_idx);
     }
+    // Add it to the graph
+    m.g.AddEdge(curr_ref_idx, min_idx, min_weight);
 }
 
 void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vector<MidiChar> &ref,
@@ -210,7 +212,9 @@ void editDistanceTile(std::vector<std::vector<MemoVal> > &memo, const std::vecto
         // std::cout << "; Chose Substitution / Match";
         memo[ref_idx][inp_idx] = prev;
     }
+#ifdef TRACK_PATH
     memo[ref_idx][inp_idx].path.push_back({ref_idx, inp_idx});
+#endif
     // std::cout << std::endl;
 }
 
@@ -275,6 +279,7 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
     //      a second input.  Once we have an effective mapping, we can calculate tempo differentials on a per-match basis
     //      and filter different kinds of tempo differences.
 
+#ifdef TRACK_PATH
     // Fill the base-case row / column in the memo
     for (size_t i = 0; i < ref.size() + 1; ++i) {
       memo[i][0].path.push_back({i, 0});
@@ -282,6 +287,7 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
     for (size_t i = 0; i < inp.size() + 1; ++i) {
       memo[0][i].path.push_back({0, i});
     }
+#endif
 
     for (size_t ref_idx = 1; ref_idx <= ref.size(); ++ref_idx) {
         for (size_t inp_idx = 1; inp_idx <= inp.size(); ++inp_idx) {
@@ -290,9 +296,11 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
     }
     auto ret = memo.back().back();
     std::cout << "Real Result: " << ret.totalWeight(100'000'000, 100'000'000) << std::endl;
+#ifdef TRACK_PATH
     std::cout << "Path: " << std::endl;
     for (auto p : ret.path) {
         std::cout << "(" << p.r << ", " << p.i << ")" << std::endl;
     }
+#endif
     return ret.g;
 }

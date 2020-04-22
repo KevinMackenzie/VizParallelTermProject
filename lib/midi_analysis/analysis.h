@@ -24,7 +24,7 @@ struct SimpleMidiEventList {
 struct MidiChar {
     // The current state of the notes last played on the keyboard
     //  NOTE: Attenuation is not factored in yet, and the pedal is not considered
-    SimpleMidiEvent keyboardContext[128];
+    // SimpleMidiEvent keyboardContext[128];
     // The midi event corresponding to this "char"
     SimpleMidiEvent event;
     // The onset time of the previous note in the string

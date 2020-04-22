@@ -44,11 +44,17 @@ void printMidiEventList(const std::vector<SimpleMidiEvent> &evtlist) {
 
 SimpleMidiEventList convertMidiFile(const smf::MidiFile& midifile) {
     std::vector<SimpleMidiEvent> evtlist;
+    int32_t first_onset = -1;
     int tracks = midifile.getTrackCount();
     for (int track = 0; track < tracks; track++) {
         for (int event = 0; event < midifile[track].size(); event++) {
             if (midifile[track][event].isNoteOn()) {
                 evtlist.emplace_back(fromMidiEvent(midifile[track][event]));
+                if (first_onset == -1) {
+                    first_onset = evtlist.back().onset;
+                } else {
+                    evtlist.back().onset -= first_onset;
+                }
             }
         }
     }
@@ -62,11 +68,11 @@ MidiString constructMidiString(std::vector<SimpleMidiEvent> evts) {
     MidiChar curr;
     uint32_t prev_onset = 0;
     for (auto evt : evts) {
-        for (auto &i : curr.keyboardContext) {
-            if (i.duration + i.onset < evt.onset) {
-                i = SimpleMidiEvent();
-            }
-        }
+        // for (auto &i : curr.keyboardContext) {
+        //     if (i.duration + i.onset < evt.onset) {
+        //         i = SimpleMidiEvent();
+        //     }
+        // }
         curr.event = evt;
         curr.prev_onset = prev_onset;
         prev_onset = curr.event.onset;
@@ -135,9 +141,9 @@ void PrintGraphViz(const WeightedBipartiteGraph<MidiChar> &g, std::ostream &o) {
     // Edges between l/r
     for (size_t i = 0; i < g.GetL().size(); ++i) {
         for (size_t j = 0; j < g.GetLNodeDegree(i); ++j) {
-            o << "l" << i << " -- " << "r" << g.GetLNodeEdges(i)[j].to;
+            o << "l" << i << " -- " << "r" << g.GetLNodeEdges(i).find(j)->to;
 
-            if (g.GetL()[i].event.pitch != g.GetR()[g.GetLNodeEdges(i)[j].to].event.pitch) {
+            if (g.GetL()[i].event.pitch != g.GetR()[g.GetLNodeEdges(i).find(j)->to].event.pitch) {
                 o << "[color=red;penwidth=5]";
             }
             o << std::endl;
