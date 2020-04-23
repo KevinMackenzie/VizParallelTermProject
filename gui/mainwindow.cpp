@@ -34,8 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupMenuBar();
     setupToolBar();
     // openFile("midi_files/test1.mid", 0); //TODO: Remove after testing
-    openFile("midi_files/test1.mid", 0);
-    openFile("midi_files/test2.mid", 1);
+    openFile("midi_files/ChopinOp150posth1.mid", 0);
+    openFile("midi_files/ChopinOp150posth2.mid", 1);
 }
 
 void MainWindow::setupMenuBar() {
@@ -47,14 +47,14 @@ void MainWindow::setupMenuBar() {
     viewMenu->addAction(noteInfoDock->toggleViewAction());
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event) {
+//void MainWindow::resizeEvent(QResizeEvent *event) {
 //    QWidget::resizeEvent(event);
 //    gview->resize(event->size() - 2 * QSize(10, 10));
 //    gview->setInteractive(true);
 //
 //    auto sz = gview->contentsRect().size();
 //    gview->setSceneRect(0, 0, sz.width(), sz.height());
-}
+//}
 
 void MainWindow::open(int idx) {
     QString fileName = QFileDialog::getOpenFileName(this, "Open the file");

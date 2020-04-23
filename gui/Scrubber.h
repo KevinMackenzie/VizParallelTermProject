@@ -4,10 +4,10 @@
 
 #include <QGraphicsItem>
 
-// May need to switch to inheriting QGraphicsObject if we want to have signals/slots for mouseover/playback
-class Scrubber : public QGraphicsItem {
+class Scrubber : public QGraphicsObject {
+    Q_OBJECT
 public:
-    explicit Scrubber(QGraphicsItem *parent = nullptr);
+    explicit Scrubber(QGraphicsObject *parent = nullptr);
 
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
@@ -20,6 +20,7 @@ protected:
 
 private:
     QColor color;
+    QList<QGraphicsItem*> scrubbedItems;
 };
 
 

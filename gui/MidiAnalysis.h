@@ -21,11 +21,11 @@ public:
 
     void setInput(const smf::MidiFile &inp);
 
-    const std::optional<smf::MidiFile> &getReference() const { return reference; }
+    std::optional<smf::MidiFile> &getReference()  { return reference; }
 
-    const std::optional<smf::MidiFile> &getInput() const { return input; }
+    std::optional<smf::MidiFile> &getInput()  { return input; }
 
-    const std::optional<out_data> getAnalysisResults() const {return odata; }
+    const std::optional<out_data> getAnalysisResults() const { return odata; }
 
     void Analyze();
 

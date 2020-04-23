@@ -16,6 +16,7 @@ public:
     static const QBrush green;
     static const QBrush yellow;
     static const QBrush red;
+    bool scrubbed = false;
 
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
@@ -24,6 +25,7 @@ public:
 signals:
 
     void mouseEnter(int slotNum, int noteIdx);
+
     void mouseExit(int slotNum, int noteIdx);
 };
 

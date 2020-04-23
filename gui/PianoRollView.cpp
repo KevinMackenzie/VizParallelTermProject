@@ -8,7 +8,7 @@
 void PianoRollView::scrollContentsBy(int dx, int dy) {
     QGraphicsView::scrollContentsBy(dx, dy);
 //    std::cout << "Moved by " << dx << std::endl;
-    // ((PianoRollScene*)scene())->pitchAxis.moveBy(-dx, 0);
+//     ((PianoRollScene*)scene())->scrubber.moveBy(0, -dy);
     updateAxes();
 }
 
@@ -21,6 +21,17 @@ void PianoRollView::updateAxes() {
     sz.setWidth((br.x() - tl.x()) / rect().width());
     sz.setHeight((br.y() - tl.y()) / rect().height());
     sc->updateScale(mapToScene(0, 0), sz);
+
+    double inputEnd = 0;
+    double refEnd = 0;
+    if (sc->analysis.getInput().has_value()) {
+        inputEnd = sc->analysis.getInput().value().getFileDurationInSeconds();
+    }
+    if (sc->analysis.getReference().has_value()) {
+        refEnd = sc->analysis.getReference().value().getFileDurationInSeconds();
+    }
+    double endTime = std::max(inputEnd, refEnd);
+    timeAxis->setEndTime(endTime);
     // sc->pitchAxis.setX(this->mapToScene(0, 0).x());
 }
 

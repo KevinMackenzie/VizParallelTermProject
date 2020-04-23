@@ -22,6 +22,6 @@ add_executable(testqt
         MidiNoteGraphicsItem.cpp
         MidiNoteGraphicsItem.h
         MidiAnalysis.cpp
-        NoteInfo.cpp NoteInfo.h PianoRollScene.cpp PianoRollScene.h PianoRollView.cpp PianoRollView.h PianoRollPitchAxis.cpp PianoRollPitchAxis.h Scrubber.cpp Scrubber.h)
+        NoteInfo.cpp NoteInfo.h PianoRollScene.cpp PianoRollScene.h PianoRollView.cpp PianoRollView.h PianoRollPitchAxis.cpp PianoRollPitchAxis.h Scrubber.cpp Scrubber.h PianoRollTimeAxis.cpp PianoRollTimeAxis.h)
 
 target_link_libraries(testqt PRIVATE Qt5::Widgets lib)

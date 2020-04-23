@@ -18,7 +18,7 @@ Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = nullptr);
 
-    void resizeEvent(QResizeEvent *event) override;
+//    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     void open1() { open(0); }

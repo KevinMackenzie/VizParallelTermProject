@@ -1,14 +1,16 @@
 #include <Analysis.h>
+#include <QGraphicsSceneMouseEvent>
 #include "PianoRollScene.h"
 #include "MidiNoteGraphicsItem.h"
 
-PianoRollScene::PianoRollScene(QRectF rect, const MidiAnalysis &a, int low_note, int high_note, int subdiv,
+PianoRollScene::PianoRollScene(QRectF rect, MidiAnalysis &a, int low_note, int high_note, int subdiv,
                                QWidget *parent)
         : QGraphicsScene(rect, parent), pitchAxis(rect, low_note, high_note), subdiv(subdiv), midiItems(subdiv),
           analysis(a), scrubber(nullptr){
 
     addItem(&pitchAxis);
     addItem(&scrubber);
+    scrubber.setPos(pitchAxis.getWhiteKeySize().width(), 0);
     this->drawStaff();
 }
 
@@ -54,6 +56,7 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
         // TODO: This probably isn't the best place to handle this signal
         connect(item, &MidiNoteGraphicsItem::mouseEnter, this, &PianoRollScene::showConnectivity);
         connect(item, &MidiNoteGraphicsItem::mouseExit, this, &PianoRollScene::hideConnectivity);
+
     }
 }
 
@@ -119,4 +122,9 @@ void PianoRollScene::hideConnectivity(int slotNum, int noteIdx) {
     for (auto it : cc.rNodes) {
         midiItems[1][it]->setBrush(MidiNoteGraphicsItem::green);
     }
+}
+
+void PianoRollScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) {
+    scrubber.setPos(mouseEvent->scenePos().x(), 0);
+    QGraphicsScene::mousePressEvent(mouseEvent);
 }

@@ -14,12 +14,14 @@ class PianoRollScene : public QGraphicsScene {
 Q_OBJECT
 friend class PianoRollView;
 public:
-    explicit PianoRollScene(QRectF rect, const MidiAnalysis& a, int low_note = 21, int high_note = 108, int subdiv = 1, QWidget *parent = nullptr);
+    explicit PianoRollScene(QRectF rect, MidiAnalysis& a, int low_note = 21, int high_note = 108, int subdiv = 1, QWidget *parent = nullptr);
 
     void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx);
     void clearMidiNotes(int idx);
 
     void updateScale(QPointF origin, QSizeF scale);
+
+    void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
 
 private slots:
     void showConnectivity(int slotNum, int noteIdx);
@@ -35,7 +37,7 @@ private:
     int subdiv;
     PianoRollPitchAxis pitchAxis;
     std::vector<std::vector<MidiNoteGraphicsItem*> > midiItems;
-    const MidiAnalysis& analysis;
+    MidiAnalysis& analysis;
     Scrubber scrubber;
 };
 

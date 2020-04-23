@@ -21,3 +21,4 @@ void MidiNoteGraphicsItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
     emit mouseExit(slotNum, noteIdx);
     update();
 }
+
