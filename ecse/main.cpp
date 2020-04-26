@@ -82,39 +82,71 @@ int main(int argc, char **argv) {
 
     MidiString ref = loadMidiString(options.getArg(1));
     MidiString inp = loadMidiString(options.getArg(2));
+    size_t mx = argc < 4 ? 0 : atoi(argv[3]);
 
-    std::cout << "Reference:" << std::endl;
-    filterTempo(ref);
-    for (auto ch : ref) {
-        std::cout << "Pitch: " << ch.event.pitch << "; Tempo: " << ch.tempo << ";" << std::endl;
-    }
-    filterTempo(inp);
-    std::cout << "Input:" << std::endl;
-    for (auto ch : inp) {
-        std::cout << "Pitch: " << ch.event.pitch << "; Tempo: " << ch.tempo << ";" << std::endl;
-    }
+    // std::cout << "Reference:" << std::endl;
+    // filterTempo(ref, 0);
+    // for (auto ch : ref) {
+    //     std::cout << "Pitch: " << ch.event.pitch << "; Tempo: " << ch.tempo << ";" << std::endl;
+    // }
+    // filterTempo(inp, 0);
+    // std::cout << "Input:" << std::endl;
+    // for (auto ch : inp) {
+    //     std::cout << "Pitch: " << ch.event.pitch << "; Tempo: " << ch.tempo << ";" << std::endl;
+    // }
 
     std::cout << "Ref Size: " << ref.size() << std::endl;
     std::cout << "Inp Size: " << inp.size() << std::endl;
+
+    if (mx) {
+        ref.resize(mx);
+        inp.resize(mx);
+    }
 
     clock_t start = clock();
     auto g = editDistanceDiagonal(ref, inp, true);
     clock_t end = clock();
 
-    std::cout << "Edit Distance Result: " << g.GetTotalWeight() << std::endl;
+    cutVestigialEdges(g);
+
+    auto averageOnsetInt = (float)(ref.back().event.onset - ref[0].event.onset) / ref.size();
+    std::cout << "Average OI " << averageOnsetInt << std::endl;
+
+    auto lt = filterOnsetFrequency(ref, 1000);
+    std::ofstream o1("tempoL.csv");
+    for (size_t i = 0; i < lt.size(); ++i) {
+        o1 << ref[i].event.onset << "," << lt[i] << std::endl;
+    }
+    o1.close();
+
+    auto rt = filterOnsetFrequency(inp, 1000);
+    std::ofstream o2("tempoR.csv");
+    for (size_t i = 0; i < rt.size(); ++i) {
+        o2 << inp[i].event.onset << "," << rt[i] << std::endl;
+    }
+    o2.close();
+
+    auto ts = filterTimeStretch(g, lt, rt, 100);
+    std::ofstream o3("stretch.csv");
+    for (size_t i = 0; i < ts.size(); ++i) {
+        o3 << inp[i].event.onset << "," << ts[i] << std::endl;
+    }
+    o3.close();
+
+    // std::cout << "Edit Distance Result: " << g.GetTotalWeight() << std::endl;
     // std::cout << g;
 
-    std::cout << "Took " << (double) (end - start) / CLOCKS_PER_SEC << " Seconds" << std::endl;
+    // std::cout << "Took " << (double) (end - start) / CLOCKS_PER_SEC << " Seconds" << std::endl;
 
-    std::cout << "Weights: " << std::endl;
-    for (size_t i = 0; i < ref.size(); ++i) {
-        std::cout << "Ref Node: " << pitchToNote(ref[i].event.pitch) << "; (" << ref[i].event.onset << ");" << std::endl;
-        for (auto a : g.GetLNodeEdges(i)) {
-            std::cout << "to " << pitchToNote(inp[a.to].event.pitch) << " (" << inp[a.to].event.onset << ")";
-            weight_func(ref[i], inp[a.to]);
-        }
-        std::cout << std::endl;
-    }
+    // std::cout << "Weights: " << std::endl;
+    // for (size_t i = 0; i < ref.size(); ++i) {
+    //     std::cout << "Ref Node: " << pitchToNote(ref[i].event.pitch) << "; (" << ref[i].event.onset << ");" << std::endl;
+    //     for (auto a : g.GetLNodeEdges(i)) {
+    //         std::cout << "to " << pitchToNote(inp[a.to].event.pitch) << " (" << inp[a.to].event.onset << ")";
+    //         weight_func(ref[i], inp[a.to]);
+    //     }
+    //     std::cout << std::endl;
+    // }
 
 
     std::ofstream ofile("graph.dot");

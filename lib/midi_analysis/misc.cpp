@@ -5,10 +5,10 @@
 #include <iostream>
 #include <iomanip>
 
-SimpleMidiEvent fromMidiEvent(const smf::MidiEvent &mevt) {
+SimpleMidiEvent fromMidiEvent(int offset, const smf::MidiEvent &mevt) {
     SimpleMidiEvent evt;
     evt.duration = mevt.getTickDuration();
-    evt.onset = mevt.tick;
+    evt.onset = mevt.tick - offset;
     evt.pitch = mevt.getKeyNumber();
     evt.velocity = mevt.getVelocity();
     return evt;
@@ -49,12 +49,9 @@ SimpleMidiEventList convertMidiFile(const smf::MidiFile& midifile) {
     for (int track = 0; track < tracks; track++) {
         for (int event = 0; event < midifile[track].size(); event++) {
             if (midifile[track][event].isNoteOn()) {
-                evtlist.emplace_back(fromMidiEvent(midifile[track][event]));
-                if (first_onset == -1) {
-                    first_onset = evtlist.back().onset;
-                } else {
-                    evtlist.back().onset -= first_onset;
-                }
+                if (first_onset == -1)
+                    first_onset = midifile[track][event].tick;
+                evtlist.emplace_back(fromMidiEvent(first_onset, midifile[track][event]));
             }
         }
     }
@@ -80,10 +77,12 @@ MidiString constructMidiString(std::vector<SimpleMidiEvent> evts) {
 
 std::vector<SimpleMidiEvent> convertMidiEvents(const smf::MidiEventList &evtList) {
     std::vector<SimpleMidiEvent> evts;
+    int start = 0;
     for (size_t i = 0; i < evtList.size(); ++i) {
         auto event = evtList[i];
         if (event.isNoteOn()) {
-            evts.emplace_back(fromMidiEvent(event));
+            if (start < 0) start = event.tick;
+            evts.emplace_back(fromMidiEvent(start, event));
         }
     }
     return evts;
@@ -97,10 +96,13 @@ MidiString loadMidiString(const std::string &path) {
 
     std::vector<SimpleMidiEvent> evtlist;
     int tracks = midifile.getTrackCount();
+    int start = -1;
     for (int track = 0; track < tracks; track++) {
         for (int event = 0; event < midifile[track].size(); event++) {
             if (midifile[track][event].isNoteOn()) {
-                evtlist.emplace_back(fromMidiEvent(midifile[track][event]));
+                if (start == -1)
+                    start = midifile[track][event].tick;
+                evtlist.emplace_back(fromMidiEvent(start, midifile[track][event]));
             }
         }
     }
