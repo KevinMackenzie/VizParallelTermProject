@@ -10,35 +10,6 @@
 #include "analysis.h"
 #include "misc.h"
 
-
-float filterWeight(float f) {
-    const int base = 2;
-    const float pow_div = 0.0001f;
-    return powf(base, -f * pow_div);
-}
-
-void filterTempo(MidiString &str) {
-    const size_t filterSize = 2;
-    for (size_t i = filterSize; i < str.size(); ++i) {
-        auto myOnset = str[i].event.onset;
-        uint32_t time_accum = 0;
-        float weight_accum = 0;
-        for (size_t j = i; j > i - filterSize; --j) {
-            time_accum += str[j].event.onset - str[j - 1].event.onset;
-            weight_accum += filterWeight(myOnset - (str[j].event.onset + str[j - 1].event.onset) / 2.f);
-        }
-        // We might just want to assume general position
-        if (time_accum == 0) {
-            time_accum = 1;
-        }
-        str[i].tempo = weight_accum / time_accum;
-    }
-
-    // Now weight the first few in ... reverse? maybe idk
-    for (size_t i = 0; i < filterSize; ++i) {
-        str[i].tempo = str[filterSize].tempo;
-    }
-}
 struct pt {
     size_t r, i;
 };
@@ -70,30 +41,7 @@ struct MemoVal {
 };
 
 float weight_func(const MidiChar &rch, const MidiChar &ich) {
-    // TODO: this is Ok, but it has limitations since pitches that are off-by-one get erroneously matched when better
-    // TODO:    matches exist.  Probably has to do with interplay with time analysis
-    float pitch_comp = powf(abs((int)rch.event.pitch - ich.event.pitch), 2);
-    float time_comp = 0;
-    if (rch.prev_onset != 0 && ich.prev_onset != 0) {
-        // This is flawed b/c two notes could be very far apart, but when aligned at the previous onset, they could
-        //  have very similar expected onset projections in the new time-space.  I think we to (a) sanity check
-        //  that the notes are reasonably close in time or (b) factor absolute time in some numerically.
-        // We could mitigate this by reducing the amount of time that the linear scan on each tile is allowed to go
-        //  backwards (i.e. we only find the best "match" in a temporal area since re-orderings are likely to only
-        //             occur in a relatively small window: 0.5 seconds is a large estimate)
-        //  This doesn't completely solve the problem since similar problems in that window are still possible;
-        //      Since this is DP, we could increase the cost the further away it is from the reference during the
-        //      linear back-track, which will still need to re-order for some inputs hmm...
-        // The goal with this part of the weight is to balance the cost of insertion / removal with non-trivial
-        //  local onset discrepancies, so we use the nature of edit-distance to take care of large discrepancies
-        auto expected_onset_interval = (rch.event.onset - rch.prev_onset) * (rch.tempo / ich.tempo);
-        auto expected_onset = ich.prev_onset + expected_onset_interval;
-        time_comp = fabsf(expected_onset - ich.event.onset) / 100.f;
-        // if (pitch_comp == 0)
-        //   std::cout << "Time Diff: " << time_comp << std::endl;
-    }
-    // float time_comp = abs(ch0.event.onset - ch1.event.onset) / 100.f;
-    return pitch_comp; // + time_comp;
+    return powf(abs((int)rch.event.pitch - ich.event.pitch), 2);
 }
 
 void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val, const std::vector<MidiChar> &ref,

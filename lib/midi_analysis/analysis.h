@@ -28,9 +28,9 @@ struct MidiChar {
     // The midi event corresponding to this "char"
     SimpleMidiEvent event;
     // The onset time of the previous note in the string
-    uint32_t prev_onset;
+    // uint32_t prev_onset;
     // The instantaneous tempo (notes / time unit) at this event
-    float tempo;
+    // float tempo;
 };
 
 using MidiString = std::vector<MidiChar>;
@@ -41,7 +41,11 @@ WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, con
 // for CC's with the same pitch and an equal number of L/R nodes, cuts non-in-order pairwise edges
 void cutVestigialEdges(WeightedBipartiteGraph<MidiChar>& g);
 
-void filterTempo(MidiString& str);
+// Filters onset frequency over a string centered over each onset within a given window
+std::vector<float> filterOnsetFrequency(MidiString& str, uint32_t window);
+// Filters inter-onset-intervals for the "R" side of the graph when compared against the "L" side of the graph
+std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<MidiChar> &g, const std::vector<float> &lTempo,
+                                     const std::vector<float> &rTempo, uint32_t window);
 float weight_func(const MidiChar &rch, const MidiChar &ich);
 
 #endif //PROJECT_ANALYSIS_H
