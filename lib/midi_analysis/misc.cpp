@@ -140,10 +140,9 @@ void PrintGraphViz(const WeightedBipartiteGraph<MidiChar> &g, std::ostream &o) {
 
     // Edges between l/r
     for (size_t i = 0; i < g.GetL().size(); ++i) {
-        for (size_t j = 0; j < g.GetLNodeDegree(i); ++j) {
-            o << "l" << i << " -- " << "r" << g.GetLNodeEdges(i).find(j)->to;
-
-            if (g.GetL()[i].event.pitch != g.GetR()[g.GetLNodeEdges(i).find(j)->to].event.pitch) {
+        for (auto e : g.GetLNodeEdges(i)) {
+            o << "l" << i << " -- " << "r" << e.to;
+            if (g.GetL()[i].event.pitch != g.GetR()[e.to].event.pitch) {
                 o << "[color=red;penwidth=5]";
             }
             o << std::endl;
