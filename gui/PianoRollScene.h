@@ -14,6 +14,11 @@ class PianoRollScene : public QGraphicsScene {
 Q_OBJECT
 friend class PianoRollView;
 public:
+    constexpr static QColor trackOne = QColor(31, 120, 180);
+    constexpr static QColor trackOneHighlight = QColor(166, 206, 227);
+    constexpr static QColor trackTwo = QColor(51, 160, 44);
+    constexpr static QColor trackTwoHighlight = QColor(178, 223, 138);
+
     explicit PianoRollScene(QRectF rect, MidiAnalysis& a, int low_note = 21, int high_note = 108, int subdiv = 1, QWidget *parent = nullptr);
 
     void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx);

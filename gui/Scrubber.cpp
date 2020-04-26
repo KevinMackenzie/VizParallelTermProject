@@ -12,11 +12,12 @@
 #include <iostream>
 
 Scrubber::Scrubber(QGraphicsObject *parent)
-        : QGraphicsObject(parent), color(QColor(255, 0, 0)) {
+        : QGraphicsObject(parent), color(QColor(255, 0, 0)), YScale(1) {
     setCursor(Qt::OpenHandCursor);
-    setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemSendsGeometryChanges |
-             QGraphicsItem::ItemIgnoresTransformations);
-//    setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemSendsGeometryChanges);
+    setFlags(QGraphicsItem::ItemIsMovable
+    | QGraphicsItem::ItemSendsGeometryChanges
+    | QGraphicsItem::ItemIgnoresTransformations
+             );
 }
 
 void Scrubber::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
@@ -25,11 +26,11 @@ void Scrubber::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
     auto transform = painter->viewport();
     painter->setPen(Qt::NoPen);
     painter->setBrush(Qt::red);
-    painter->drawRect(0, 0, 4, 500);
+    painter->drawRect(0, 0, 4, 500/YScale);
 }
 
 QRectF Scrubber::boundingRect() const {
-    return QRectF(0, 0, 4, 500);
+    return QRectF(0, 0, 4, 500/YScale);
 }
 
 void Scrubber::mousePressEvent(QGraphicsSceneMouseEvent *event) {
@@ -52,7 +53,7 @@ QVariant Scrubber::itemChange(GraphicsItemChange change, const QVariant &value) 
         for (auto item : scrubbedItems) {
             auto midi_item = dynamic_cast<MidiNoteGraphicsItem *>(item);
             if (midi_item) {
-                midi_item->setBrush(midi_item->green);
+                midi_item->hoverLeaveEvent(nullptr);
             }
         }
         scrubbedItems.clear();
@@ -61,7 +62,7 @@ QVariant Scrubber::itemChange(GraphicsItemChange change, const QVariant &value) 
             auto midi_item = dynamic_cast<MidiNoteGraphicsItem *>(item);
             if (midi_item) {
                 scrubbedItems.push_back(midi_item);
-                midi_item->setBrush(midi_item->red);
+                midi_item->hoverEnterEvent(nullptr);
             }
         }
 

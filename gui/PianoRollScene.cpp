@@ -18,7 +18,6 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
     if (idx >= subdiv) return;
 
     QPen *pen = new QPen(QColor(0, 0, 0));
-    QBrush *greenBrush = new QBrush(QColor(0, 127, 0));
     auto whiteKeySize = pitchAxis.getWhiteKeySize();
     auto blackKeySize = pitchAxis.getBlackKeySize();
 
@@ -45,7 +44,7 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
         // Draw items
         auto item = new MidiNoteGraphicsItem(
                 QRectF(left, top, w, (1.f / subdiv) * full_height), idx, aaa++);
-        item->setBrush(*greenBrush);
+        item->setBrush(QBrush(idx == 0 ? PianoRollScene::trackOne : PianoRollScene::trackTwo));
         item->setPen(*pen);
         this->addItem(item);
         this->midiItems[idx].push_back(item);
@@ -98,6 +97,7 @@ qreal PianoRollScene::getYFromPitch(int pitch) {
 void PianoRollScene::updateScale(QPointF origin, QSizeF scale) {
     pitchAxis.setX(origin.x());
     pitchAxis.updateXScale(scale.width());
+    scrubber.updateYScale(scale.height());
 }
 
 void PianoRollScene::showConnectivity(int slotNum, int noteIdx) {
@@ -105,10 +105,10 @@ void PianoRollScene::showConnectivity(int slotNum, int noteIdx) {
     auto cc = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLCC(noteIdx)
                              : analysis.getAnalysisResults()->mapping.GetRCC(noteIdx);
     for (auto it : cc.lNodes) {
-        midiItems[0][it]->setBrush(MidiNoteGraphicsItem::yellow);
+        midiItems[0][it]->setBrush(QBrush(PianoRollScene::trackOneHighlight));
     }
     for (auto it : cc.rNodes) {
-        midiItems[1][it]->setBrush(MidiNoteGraphicsItem::yellow);
+        midiItems[1][it]->setBrush(QBrush(PianoRollScene::trackTwoHighlight));
     }
 }
 
@@ -117,10 +117,10 @@ void PianoRollScene::hideConnectivity(int slotNum, int noteIdx) {
     auto cc = (slotNum == 0) ? analysis.getAnalysisResults()->mapping.GetLCC(noteIdx)
                                 : analysis.getAnalysisResults()->mapping.GetRCC(noteIdx);
     for (auto it : cc.lNodes) {
-        midiItems[0][it]->setBrush(MidiNoteGraphicsItem::green);
+        midiItems[0][it]->setBrush(QBrush(PianoRollScene::trackOne));
     }
     for (auto it : cc.rNodes) {
-        midiItems[1][it]->setBrush(MidiNoteGraphicsItem::green);
+        midiItems[1][it]->setBrush(QBrush(PianoRollScene::trackTwo));
     }
 }
 

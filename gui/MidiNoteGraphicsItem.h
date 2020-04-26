@@ -13,9 +13,6 @@ public:
 
     const int slotNum;
     const int noteIdx;
-    static const QBrush green;
-    static const QBrush yellow;
-    static const QBrush red;
     bool scrubbed = false;
 
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
