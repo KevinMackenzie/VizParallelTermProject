@@ -38,6 +38,9 @@ using MidiString = std::vector<MidiChar>;
 WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiString &inp);
 WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel);
 
+// for CC's with the same pitch and an equal number of L/R nodes, cuts non-in-order pairwise edges
+void cutVestigialEdges(WeightedBipartiteGraph<MidiChar>& g);
+
 void filterTempo(MidiString& str);
 float weight_func(const MidiChar &rch, const MidiChar &ich);
 

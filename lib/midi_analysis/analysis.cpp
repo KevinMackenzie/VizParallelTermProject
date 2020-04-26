@@ -5,6 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <algorithm>
 #include "WeightedBipartiteGraph.h"
 #include "analysis.h"
 #include "misc.h"
@@ -335,4 +336,19 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
     }
 #endif
     return ret.g;
+}
+
+void cutVestigialEdges(WeightedBipartiteGraph<MidiChar>& g) {
+    for (size_t i = 0; i < g.GetL().size(); ++i) {
+        auto cc = g.GetLCC(i);
+        if (cc.lNodes.size() > 1 && cc.lNodes.size() == cc.rNodes.size()) {
+            std::sort(cc.lNodes.begin(), cc.lNodes.end());
+            std::sort(cc.rNodes.begin(), cc.rNodes.end());
+            for (size_t j = 0; j < cc.lNodes.size(); ++j) {
+                for (size_t k = 0; k < cc.rNodes.size(); ++k) {
+                    if (j != k) g.RemoveEdge(cc.lNodes[j], cc.rNodes[k]);
+                }
+            }
+        }
+    }
 }
