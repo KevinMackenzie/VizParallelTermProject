@@ -14,25 +14,27 @@ PianoRollScene::PianoRollScene(QRectF rect, MidiAnalysis &a, int low_note, int h
     this->drawStaff();
 }
 
-void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx) {
+void PianoRollScene::drawMidiNotes(const MidiString &f, NoteInfo *toConnect, int idx) {
     if (idx >= subdiv) return;
 
     QPen *pen = new QPen(QColor(0, 0, 0));
     auto whiteKeySize = pitchAxis.getWhiteKeySize();
     auto blackKeySize = pitchAxis.getBlackKeySize();
 
-    float width_scale = (this->width() - blackKeySize.width()) / f.getFileDurationInSeconds();
+    if (idx == 0)
+        width_scale = (this->width() - blackKeySize.width()) / (f.back().onset + f.back().duration);
 
-    int track = 0;
-    int aaa = 0; // TODO: connect this with the actual indexing instead of loading from file twice
-    for (int i = 0; i < f[track].size(); i++) {
-        if (!f[track][i].isNoteOn()) {
-            continue;
-        }
+    for (size_t i = 0; i < f.size(); ++i) {
+        // if (!f[track][i].isNoteOn()) {
+        //     continue;
+        // }
         // Get note values
-        int pitch = f[track][i].getP1();
-        float startsec = f[track][i].seconds;
-        float duration = f[track][i].getDurationInSeconds();
+        int pitch = f[i].pitch;
+        float startsec = f[i].onset;
+        float duration = f[i].duration;
+        // int pitch = f[track][i].getP1();
+        // float startsec = f[track][i].seconds;
+        // float duration = f[track][i].getDurationInSeconds();
 //        std::cout << "Pitch: " << pitch << " on: " << startsec << " duration: " << duration << std::endl;
 
         // Calculate Coordinates
@@ -43,7 +45,7 @@ void PianoRollScene::drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int id
 
         // Draw items
         auto item = new MidiNoteGraphicsItem(
-                QRectF(left, top, w, (1.f / subdiv) * full_height), idx, aaa++);
+                QRectF(left, top, w, (1.f / subdiv) * full_height), idx, i);
         item->setBrush(QBrush(idx == 0 ? PianoRollScene::trackOne : PianoRollScene::trackTwo));
         item->setPen(*pen);
         this->addItem(item);

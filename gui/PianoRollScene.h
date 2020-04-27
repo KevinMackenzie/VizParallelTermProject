@@ -21,7 +21,7 @@ public:
 
     explicit PianoRollScene(QRectF rect, MidiAnalysis& a, int low_note = 21, int high_note = 108, int subdiv = 1, QWidget *parent = nullptr);
 
-    void drawMidiNotes(smf::MidiFile &f, NoteInfo *toConnect, int idx);
+    void drawMidiNotes(const MidiString &f, NoteInfo *toConnect, int idx);
     void clearMidiNotes(int idx);
 
     void updateScale(QPointF origin, QSizeF scale);
@@ -40,6 +40,7 @@ private:
     void drawStaff();
 
     int subdiv;
+    float width_scale;
     PianoRollPitchAxis pitchAxis;
     std::vector<std::vector<MidiNoteGraphicsItem*> > midiItems;
     MidiAnalysis& analysis;

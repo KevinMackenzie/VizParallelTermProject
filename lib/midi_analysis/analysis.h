@@ -20,6 +20,7 @@ struct SimpleMidiEventList {
     MidiString events;
     std::vector<float> offsetFreq;
 };
+inline uint32_t getMidiStringLength(const MidiString& m) { return m.back().onset + m.back().duration - m.front().onset; }
 
 WeightedBipartiteGraph<SimpleMidiEvent> editDistance(const MidiString &ref, const MidiString &inp);
 WeightedBipartiteGraph<SimpleMidiEvent> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel);

@@ -25,10 +25,11 @@ void PianoRollView::updateAxes() {
     double inputEnd = 0;
     double refEnd = 0;
     if (sc->analysis.getInput().has_value()) {
-        inputEnd = sc->analysis.getInput().value().getFileDurationInSeconds();
+        // This "/19200" is a hack to make the "seconds" line up correctly w/ 96 ticks/beat; 120bpm
+        inputEnd = getMidiStringLength(sc->analysis.getInput().value()) / 19200.;
     }
     if (sc->analysis.getReference().has_value()) {
-        refEnd = sc->analysis.getReference().value().getFileDurationInSeconds();
+        refEnd = getMidiStringLength(sc->analysis.getReference().value()) / 19200.;
     }
     double endTime = std::max(inputEnd, refEnd);
     timeAxis->setEndTime(endTime);

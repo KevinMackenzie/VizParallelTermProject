@@ -18,13 +18,15 @@ public:
 
     MidiAnalysis() = default;
 
-    void setReference(const smf::MidiFile &ref);
+    void setReference(const MidiString &ref);
 
-    void setInput(const smf::MidiFile &inp);
+    void setInput(const MidiString &inp);
 
     auto &getReference()  { return reference; }
 
     auto &getInput()  { return input; }
+
+    MidiString getInputRefScaled() const;
 
     const auto getAnalysisResults() const { return odata; }
 
@@ -38,11 +40,11 @@ public:
 private:
 
     void UpdateTempoFilters();
-    std::optional<smf::MidiFile> reference;
-    std::optional<smf::MidiFile> input;
+    std::optional<MidiString> reference;
+    std::optional<MidiString> input;
 
-    unsigned int tempoWindow = 1000;
-    unsigned int stretchWindow = 100;
+    unsigned int tempoWindow = 100000;
+    unsigned int stretchWindow = 10000;
 
     std::optional<out_data> odata;
     // TODO: eventually stuff like tempo-tracking

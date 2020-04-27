@@ -7,8 +7,8 @@
 
 SimpleMidiEvent fromMidiEvent(int offset, const smf::MidiEvent &mevt) {
     SimpleMidiEvent evt;
-    evt.duration = mevt.getTickDuration();
-    evt.onset = mevt.tick - offset;
+    evt.duration = 100 * mevt.getTickDuration();
+    evt.onset = 100 * (mevt.tick - offset);
     evt.pitch = mevt.getKeyNumber();
     evt.velocity = mevt.getVelocity();
     return evt;
@@ -42,7 +42,7 @@ void printMidiEventList(const std::vector<SimpleMidiEvent> &evtlist) {
     }
 }
 
-SimpleMidiEventList convertMidiFile(const smf::MidiFile& midifile) {
+SimpleMidiEventList convertMidiFile(const smf::MidiFile &midifile) {
     std::vector<SimpleMidiEvent> evtlist;
     int32_t first_onset = -1;
     int tracks = midifile.getTrackCount();

@@ -23,6 +23,7 @@ public:
 private slots:
     void open1() { open(0); }
     void open2() { open(1); }
+    void setViewAligned(bool b) { viewAligned = b; redrawFiles(); }
 
 private:
     void setupMenuBar();
@@ -31,11 +32,14 @@ private:
     void open(int idx);
     void openFile(std::string filename, int idx);
 
+    void redrawFiles();
+
     PianoRollScene *scene;
     PianoRollView *gview;
     QDockWidget *noteInfoDock;
     NoteInfo *noteInfo;
     MidiAnalysis analysis;
 
+    bool viewAligned = true;
 };
 #endif // MAINWINDOW_H

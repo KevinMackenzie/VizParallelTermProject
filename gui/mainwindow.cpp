@@ -45,6 +45,12 @@ void MainWindow::setupMenuBar() {
 
     QMenu *viewMenu = menuBar()->addMenu(tr("View"));
     viewMenu->addAction(noteInfoDock->toggleViewAction());
+
+    auto viewAlignedAction = new QAction("&Align view");
+    viewAlignedAction->setCheckable(true);
+    viewAlignedAction->setChecked(viewAligned);
+    connect(viewAlignedAction, &QAction::triggered, this, &MainWindow::setViewAligned);
+    viewMenu->addAction(viewAlignedAction);
 }
 
 //void MainWindow::resizeEvent(QResizeEvent *event) {
@@ -100,10 +106,11 @@ void MainWindow::setupToolBar() {
 }
 
 void MainWindow::openFile(std::string fileName, int idx) {
-    smf::MidiFile file1;
-    file1.read(fileName);
-    file1.doTimeAnalysis();
-    file1.linkNotePairs();
+    auto file1 = loadMidiString(fileName);
+    // smf::MidiFile file1;
+    // file1.read(fileName);
+    // file1.doTimeAnalysis();
+    // file1.linkNotePairs();
     scene->clearMidiNotes(idx);
     if (idx == 0) {
         analysis.setReference(file1);
@@ -113,7 +120,17 @@ void MainWindow::openFile(std::string fileName, int idx) {
         std::cout << "ERROR: invalid file slot" << std::endl;
     }
     analysis.Analyze();
-    scene->drawMidiNotes(file1, noteInfo, idx);
+    scene->drawMidiNotes(
+            idx == 0 ? *analysis.getReference() : (viewAligned ? analysis.getInputRefScaled() : *analysis.getInput()),
+            noteInfo, idx);
+}
+
+void MainWindow::redrawFiles() {
+    scene->clearMidiNotes(0);
+    scene->clearMidiNotes(1);
+
+    scene->drawMidiNotes(*analysis.getReference(), noteInfo, 0);
+    scene->drawMidiNotes((viewAligned ? analysis.getInputRefScaled() : *analysis.getInput()), noteInfo, 1);
 }
 
 
