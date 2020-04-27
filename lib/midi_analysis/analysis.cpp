@@ -17,7 +17,7 @@ struct pt {
 #define REORDER_TIME_THRESH 50
 #define ORPHAN_COST 50
 struct MemoVal {
-    WeightedBipartiteGraph<MidiChar> g;
+    WeightedBipartiteGraph<SimpleMidiEvent> g;
 #ifdef TRACK_PATH
     std::vector<pt> path;
 #endif
@@ -27,12 +27,12 @@ struct MemoVal {
         // TODO: this would be a LOT faster if we did some bookkeeping instead
         int num_orphans = 0;
         for (size_t i = 0; i < g.GetL().size(); ++i) {
-            if (ref_time - g.GetL()[i].event.onset > REORDER_TIME_THRESH && g.GetLNodeDegree(i) == 0) {
+            if (ref_time - g.GetL()[i].onset > REORDER_TIME_THRESH && g.GetLNodeDegree(i) == 0) {
                 ++num_orphans;
             }
         }
         for (size_t i = 0; i < g.GetR().size(); ++i) {
-            if (inp_time - g.GetR()[i].event.onset > REORDER_TIME_THRESH && g.GetRNodeDegree(i) == 0) {
+            if (inp_time - g.GetR()[i].onset > REORDER_TIME_THRESH && g.GetRNodeDegree(i) == 0) {
                 ++num_orphans;
             }
         }
@@ -40,11 +40,11 @@ struct MemoVal {
     }
 };
 
-float weight_func(const MidiChar &rch, const MidiChar &ich) {
-    return powf(abs((int)rch.event.pitch - ich.event.pitch), 2);
+float weight_func(const SimpleMidiEvent &rch, const SimpleMidiEvent &ich) {
+    return powf(abs((int)rch.pitch - ich.pitch), 2);
 }
 
-void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val, const std::vector<MidiChar> &ref,
+void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const SimpleMidiEvent &inp_val, const std::vector<SimpleMidiEvent> &ref,
                         size_t curr_ref_idx, uint32_t time_thresh) {
     // Handle the base case
     if (curr_ref_idx == 0)
@@ -55,10 +55,10 @@ void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val
     int closest_pitch_diff = 10000;
     for (size_t i = curr_ref_idx; i > 0; --i) { // Note: We don't look at the "CURRENT" ref index, only up to
         // Restrict to window
-        if (ref[curr_ref_idx-1].event.onset - ref[i-1].event.onset > time_thresh) break;
+        if (ref[curr_ref_idx-1].onset - ref[i-1].onset > time_thresh) break;
 
         // The whole point of re-ordering is to match out-of-order pitches, so only consider pitch on re-order
-        auto w = abs((int)ref[i-1].event.pitch - inp_val.event.pitch);
+        auto w = abs((int)ref[i-1].pitch - inp_val.pitch);
         if (w < closest_pitch_diff) {
             min_idx = i-1;
             closest_pitch_diff = w;
@@ -85,7 +85,7 @@ void addMinWeightInsert(MemoVal &m, size_t curr_inp_idx, const MidiChar &inp_val
     m.g.AddEdge(min_idx, curr_inp_idx, min_weight);
 }
 
-void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val, const std::vector<MidiChar> &inp,
+void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const SimpleMidiEvent &ref_val, const std::vector<SimpleMidiEvent> &inp,
                         size_t curr_inp_idx, uint32_t time_thresh) {
     // Handle the base case
     if (curr_inp_idx == 0)
@@ -96,10 +96,10 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
     int closest_pitch_diff = 10000;
     for (size_t i = curr_inp_idx; i > 0; --i) { // Note: only looks at 'prev' and not 'curr'
         // Restrict to window
-        if (inp[curr_inp_idx-1].event.onset - inp[i-1].event.onset > time_thresh) break;
+        if (inp[curr_inp_idx-1].onset - inp[i-1].onset > time_thresh) break;
 
         // The whole point of re-ordering is to match out-of-order pitches, so only consider pitch on re-order
-        auto w = abs((int)ref_val.event.pitch - inp[i-1].event.pitch);
+        auto w = abs((int)ref_val.pitch - inp[i-1].pitch);
         if (w < closest_pitch_diff) {
             min_idx = i-1;
             closest_pitch_diff = w;
@@ -125,8 +125,8 @@ void addMinWeightDelete(MemoVal &m, size_t curr_ref_idx, const MidiChar &ref_val
     m.g.AddEdge(curr_ref_idx, min_idx, min_weight);
 }
 
-void editDistanceTile(const MemoVal& mem_r1_i0, const MemoVal& mem_r0_i1, const MemoVal& mem_r1_i1, MemoVal& mem_r0_i0, const std::vector<MidiChar> &ref,
-                      const std::vector<MidiChar> &inp, size_t ref_idx, size_t inp_idx) {
+void editDistanceTile(const MemoVal& mem_r1_i0, const MemoVal& mem_r0_i1, const MemoVal& mem_r1_i1, MemoVal& mem_r0_i0, const std::vector<SimpleMidiEvent> &ref,
+                      const std::vector<SimpleMidiEvent> &inp, size_t ref_idx, size_t inp_idx) {
     auto ref_val = ref[ref_idx - 1];
     auto inp_val = inp[inp_idx - 1];
 
@@ -144,13 +144,13 @@ void editDistanceTile(const MemoVal& mem_r1_i0, const MemoVal& mem_r0_i1, const 
     addMinWeightDelete(prev, ref_idx - 1, ref_val, inp, inp_idx, REORDER_TIME_THRESH);
 
     // Handle cost of insertion / deletion in a delayed fashion by discouraging orphaned nodes past the reorder threshold
-    float ins_weight = ref_m1.totalWeight(ref_val.event.onset, inp_val.event.onset);
-    float del_weight = inp_m1.totalWeight(ref_val.event.onset, inp_val.event.onset);
-    float mat_weight = prev.totalWeight(ref_val.event.onset, inp_val.event.onset);
+    float ins_weight = ref_m1.totalWeight(ref_val.onset, inp_val.onset);
+    float del_weight = inp_m1.totalWeight(ref_val.onset, inp_val.onset);
+    float mat_weight = prev.totalWeight(ref_val.onset, inp_val.onset);
 
     // std::cout << "Insert: " << ins_weight << "; Delete: " << del_weight << "; Match: " << mat_weight << std::endl;
 
-    // std::cout << "Comparing " << (int) ref_val.event.pitch << " and " << (int) inp_val.event.pitch;
+    // std::cout << "Comparing " << (int) ref_val.pitch << " and " << (int) inp_val.pitch;
     if (ins_weight < del_weight && ins_weight < mat_weight) {
         // std::cout << "; Chose Insertion";
         mem_r0_i0 = ref_m1;
@@ -170,14 +170,14 @@ void editDistanceTile(const MemoVal& mem_r1_i0, const MemoVal& mem_r0_i1, const 
 #define PARALLEL_THRESHOLD 20
 
 // The naive diagnal line method for the edit-distance algorithm.  Note: This won't parallelize the O(n) operation on each tile
-WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel) {
-    if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(&ref, &inp);
+WeightedBipartiteGraph<SimpleMidiEvent> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel) {
+    if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<SimpleMidiEvent>(&ref, &inp);
 
     // Use 3 memos and indexes to cycle through the 3 diagonal rows that will be in use during edit-distance
     //  This brings memory usage from n^3 to n^2
     // Note: The memo for any diagonal line will be at most the smallest dimension
     struct { std::vector<MemoVal> m; size_t sz; } memo[3];
-    MemoVal blankMemoVal = {WeightedBipartiteGraph<MidiChar>(&ref, &inp)};
+    MemoVal blankMemoVal = {WeightedBipartiteGraph<SimpleMidiEvent>(&ref, &inp)};
     memo[0] = { std::vector<MemoVal>(std::min(ref.size(), inp.size()), blankMemoVal), 0};
     memo[1] = memo[0];
     memo[2] = memo[0];
@@ -242,11 +242,11 @@ WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, con
     return memo[p1_gen].m[0].g;
 }
 
-WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiString &inp) {
-    if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<MidiChar>(&ref, &inp);
+WeightedBipartiteGraph<SimpleMidiEvent> editDistance(const MidiString &ref, const MidiString &inp) {
+    if (ref.empty() || inp.empty()) return WeightedBipartiteGraph<SimpleMidiEvent>(&ref, &inp);
     std::vector<std::vector<MemoVal> > memo(ref.size() + 1,
                                             std::vector<MemoVal>(inp.size() + 1,
-                                                                 {WeightedBipartiteGraph<MidiChar>(&ref, &inp)}));
+                                                                 {WeightedBipartiteGraph<SimpleMidiEvent>(&ref, &inp)}));
 
     // TODO: this was lost when I deleted some stuff, but here is how to deal with tempo-based mis-alignments:
     //  There are a couple of options.  The beam-search approach (see cmu source) is Ok, but relies on relatively simple
@@ -286,7 +286,7 @@ WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiS
     return ret.g;
 }
 
-void cutVestigialEdges(WeightedBipartiteGraph<MidiChar>& g) {
+void cutVestigialEdges(WeightedBipartiteGraph<SimpleMidiEvent>& g) {
     for (size_t i = 0; i < g.GetL().size(); ++i) {
         auto cc = g.GetLCC(i);
         if (cc.lNodes.size() > 1 && cc.lNodes.size() == cc.rNodes.size()) {

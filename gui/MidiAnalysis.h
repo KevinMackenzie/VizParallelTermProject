@@ -13,6 +13,7 @@ public:
         WeightedBipartiteGraph<SimpleMidiEvent> mapping;
         SimpleMidiEventList refList;
         SimpleMidiEventList inpList;
+        std::vector<float> refToInpTimeStretch;
     };
 
     MidiAnalysis() = default;
@@ -21,17 +22,27 @@ public:
 
     void setInput(const smf::MidiFile &inp);
 
-    std::optional<smf::MidiFile> &getReference()  { return reference; }
+    auto &getReference()  { return reference; }
 
-    std::optional<smf::MidiFile> &getInput()  { return input; }
+    auto &getInput()  { return input; }
 
-    const std::optional<out_data> getAnalysisResults() const { return odata; }
+    const auto getAnalysisResults() const { return odata; }
 
     void Analyze();
 
+    void setTempoWindow(unsigned int wnd) { tempoWindow = wnd; UpdateTempoFilters(); }
+    void setStretchWindow(unsigned int wnd) { stretchWindow = wnd; UpdateTempoFilters(); }
+    auto getTempoWindow() const { return tempoWindow; }
+    auto getStretchWindow() const { return stretchWindow; }
+
 private:
+
+    void UpdateTempoFilters();
     std::optional<smf::MidiFile> reference;
     std::optional<smf::MidiFile> input;
+
+    unsigned int tempoWindow = 1000;
+    unsigned int stretchWindow = 100;
 
     std::optional<out_data> odata;
     // TODO: eventually stuff like tempo-tracking

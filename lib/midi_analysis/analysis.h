@@ -15,37 +15,23 @@ struct SimpleMidiEvent {
     SimpleMidiEvent() : onset(0), duration(0), pitch(0), velocity(0) {}
 };
 
+using MidiString = std::vector<SimpleMidiEvent>;
 struct SimpleMidiEventList {
-    std::vector<SimpleMidiEvent> events;
-    // TODO: also have stuff for timing?
+    MidiString events;
+    std::vector<float> offsetFreq;
 };
 
-// A single "char" in the "string" used in edit-distance
-struct MidiChar {
-    // The current state of the notes last played on the keyboard
-    //  NOTE: Attenuation is not factored in yet, and the pedal is not considered
-    // SimpleMidiEvent keyboardContext[128];
-    // The midi event corresponding to this "char"
-    SimpleMidiEvent event;
-    // The onset time of the previous note in the string
-    // uint32_t prev_onset;
-    // The instantaneous tempo (notes / time unit) at this event
-    // float tempo;
-};
-
-using MidiString = std::vector<MidiChar>;
-
-WeightedBipartiteGraph<MidiChar> editDistance(const MidiString &ref, const MidiString &inp);
-WeightedBipartiteGraph<MidiChar> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel);
+WeightedBipartiteGraph<SimpleMidiEvent> editDistance(const MidiString &ref, const MidiString &inp);
+WeightedBipartiteGraph<SimpleMidiEvent> editDistanceDiagonal(const MidiString &ref, const MidiString &inp, bool parallel);
 
 // for CC's with the same pitch and an equal number of L/R nodes, cuts non-in-order pairwise edges
-void cutVestigialEdges(WeightedBipartiteGraph<MidiChar>& g);
+void cutVestigialEdges(WeightedBipartiteGraph<SimpleMidiEvent>& g);
 
 // Filters onset frequency over a string centered over each onset within a given window
-std::vector<float> filterOnsetFrequency(MidiString& str, uint32_t window);
+std::vector<float> filterOnsetFrequency(const MidiString & str, uint32_t window);
 // Filters inter-onset-intervals for the "R" side of the graph when compared against the "L" side of the graph
-std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<MidiChar> &g, const std::vector<float> &lTempo,
+std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<SimpleMidiEvent> &g, const std::vector<float> &lTempo,
                                      const std::vector<float> &rTempo, uint32_t window);
-float weight_func(const MidiChar &rch, const MidiChar &ich);
+float weight_func(const SimpleMidiEvent &rch, const SimpleMidiEvent &ich);
 
 #endif //PROJECT_ANALYSIS_H

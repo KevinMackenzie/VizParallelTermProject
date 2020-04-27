@@ -6,21 +6,21 @@ float filterWeight(float f) {
     return powf(base, -fabsf(f) * pow_div);
 }
 
-std::vector<float> filterOnsetFrequency(MidiString &str, uint32_t window) {
+std::vector<float> filterOnsetFrequency(const MidiString &str, uint32_t window) {
     std::vector<float> ret(str.size(), 0.0f);
     for (size_t i = 0; i < str.size(); ++i) {
-        auto myOnset = str[i].event.onset;
+        auto myOnset = str[i].onset;
         uint32_t time_accum = 0;
         float weight_accum = 0;
         for (size_t j = i; j > 0; --j) {
-            if (myOnset - str[j].event.onset > window / 2) break;
-            time_accum += str[j].event.onset - str[j - 1].event.onset;
-            weight_accum += 1; // filterWeight(myOnset - (str[j].event.onset + str[j - 1].event.onset) / 2.f);
+            if (myOnset - str[j].onset > window / 2) break;
+            time_accum += str[j].onset - str[j - 1].onset;
+            weight_accum += 1; // filterWeight(myOnset - (str[j].onset + str[j - 1].onset) / 2.f);
         }
         for (size_t j = i + 1; j < str.size(); ++j) {
-            if (str[j].event.onset - myOnset > window / 2) break;
-            time_accum += str[j].event.onset - str[j - 1].event.onset;
-            weight_accum += 1; // filterWeight(myOnset - (str[j].event.onset + str[j - 1].event.onset) / 2.f);
+            if (str[j].onset - myOnset > window / 2) break;
+            time_accum += str[j].onset - str[j - 1].onset;
+            weight_accum += 1; // filterWeight(myOnset - (str[j].onset + str[j - 1].onset) / 2.f);
         }
         if (time_accum == 0) {
             // This is bad, but never have the tempo be 0
@@ -38,13 +38,13 @@ float filterFunc(float f) {
     return powf(base, -fabsf(f) * pow_div);
 }
 
-std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<MidiChar> &g, const std::vector<float> &lTempo,
+std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<SimpleMidiEvent> &g, const std::vector<float> &lTempo,
                                      const std::vector<float> &rTempo, uint32_t window) {
     std::vector<float> inst(g.GetR().size(), 0.0f);
     for (size_t i = 1; i < g.GetR().size(); ++i) {
         const auto &el = g.GetRNodeEdges(i);
         const auto &el0 = g.GetRNodeEdges(i - 1);
-        auto ioiR = g.GetR()[i].event.onset - g.GetR()[i - 1].event.onset;
+        auto ioiR = g.GetR()[i].onset - g.GetR()[i - 1].onset;
         if (el.size != 1 || el0.size != 1 || ioiR == 0) {
             inst[i] = inst[i - 1];
             continue;
@@ -54,7 +54,7 @@ std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<MidiChar> &g, 
         const auto &e1 = el0.to_list[0];
 
         // Time stretch is the percent difference in inter-onset interval between the two points
-        auto ioiL = abs((int) g.GetL()[e.to].event.onset - (int) g.GetL()[e1.to].event.onset);
+        auto ioiL = abs((int) g.GetL()[e.to].onset - (int) g.GetL()[e1.to].onset);
         if (ioiL == 0)
             ioiL = 1;
         auto ltrTempo = rTempo[i] / lTempo[e.to];
@@ -65,18 +65,18 @@ std::vector<float> filterTimeStretch(const WeightedBipartiteGraph<MidiChar> &g, 
     const auto &str = g.GetR();
     std::vector<float> ret(str.size(), 0.0f);
     for (size_t i = 0; i < str.size(); ++i) {
-        auto myOnset = str[i].event.onset;
+        auto myOnset = str[i].onset;
         float weight_accum = 0;
         float val_accum = 0;
         for (size_t j = i; j > 0; --j) {
-            if (myOnset - str[j].event.onset > window / 2) break;
-            auto f = filterFunc(myOnset - (str[j].event.onset + str[j - 1].event.onset) / 2.f);
+            if (myOnset - str[j].onset > window / 2) break;
+            auto f = filterFunc(myOnset - (str[j].onset + str[j - 1].onset) / 2.f);
             weight_accum += f;
             val_accum += inst[j] * f;
         }
         for (size_t j = i + 1; j < str.size(); ++j) {
-            if (str[j].event.onset - myOnset > window / 2) break;
-            auto f = filterFunc(myOnset - (str[j].event.onset + str[j - 1].event.onset) / 2.f);
+            if (str[j].onset - myOnset > window / 2) break;
+            auto f = filterFunc(myOnset - (str[j].onset + str[j - 1].onset) / 2.f);
             weight_accum += f;
             val_accum += inst[j] * f;
         }

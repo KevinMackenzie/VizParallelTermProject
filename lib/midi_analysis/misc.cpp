@@ -26,10 +26,10 @@ bool isBlackKey(int midiIdx) {
     return (pc < 4 && pc % 2 == 1) || (pc > 4 && pc % 2 == 0);
 }
 
-std::ostream &operator<<(std::ostream &o, const MidiChar &ch) {
-    return o << "Onset: " << ch.event.onset << "; Duration: " << ch.event.duration << "; Pitch: "
-             << (int) ch.event.pitch
-             << "; Velocity: " << (int) ch.event.velocity;
+std::ostream &operator<<(std::ostream &o, const SimpleMidiEvent &ch) {
+    return o << "Onset: " << ch.onset << "; Duration: " << ch.duration << "; Pitch: "
+             << (int) ch.pitch
+             << "; Velocity: " << (int) ch.velocity;
 }
 
 void printMidiEventList(const std::vector<SimpleMidiEvent> &evtlist) {
@@ -56,23 +56,6 @@ SimpleMidiEventList convertMidiFile(const smf::MidiFile& midifile) {
         }
     }
     return {evtlist};
-}
-
-MidiString constructMidiString(std::vector<SimpleMidiEvent> evts) {
-    MidiString ret;
-    ret.reserve(evts.size());
-
-    MidiChar curr;
-    for (auto evt : evts) {
-        // for (auto &i : curr.keyboardContext) {
-        //     if (i.duration + i.onset < evt.onset) {
-        //         i = SimpleMidiEvent();
-        //     }
-        // }
-        curr.event = evt;
-        ret.emplace_back(curr);
-    }
-    return ret;
 }
 
 std::vector<SimpleMidiEvent> convertMidiEvents(const smf::MidiEventList &evtList) {
@@ -109,7 +92,7 @@ MidiString loadMidiString(const std::string &path) {
     std::cout << "Loading MIDI file: " << path << std::endl;
     std::cout << "Tick Rate: " << midifile.getTicksPerQuarterNote() << "/quarter note" << std::endl;
     // printMidiEventList(evtlist);
-    return constructMidiString(evtlist);
+    return evtlist;
 }
 
 const char *degToCol(size_t r) {
@@ -121,7 +104,7 @@ const char *degToCol(size_t r) {
     return "white";
 }
 
-void PrintGraphViz(const WeightedBipartiteGraph<MidiChar> &g, std::ostream &o) {
+void PrintGraphViz(const WeightedBipartiteGraph<SimpleMidiEvent> &g, std::ostream &o) {
     o << "graph \"name\" {" << std::endl;
     // Credit: https://stackoverflow.com/a/44274606
     // Show left/right on the same rank, and preserve ordering of the two sets
@@ -130,11 +113,11 @@ void PrintGraphViz(const WeightedBipartiteGraph<MidiChar> &g, std::ostream &o) {
 
     // Node labels / properties
     for (size_t i = 0; i < g.GetL().size(); ++i) {
-        o << "l" << i << " [label=\"" << pitchToNote(g.GetL()[i].event.pitch) << "\";style=filled;fillcolor="
+        o << "l" << i << " [label=\"" << pitchToNote(g.GetL()[i].pitch) << "\";style=filled;fillcolor="
           << degToCol(g.GetLNodeDegree(i)) << "]" << std::endl;
     }
     for (size_t i = 0; i < g.GetR().size(); ++i) {
-        o << "r" << i << " [label=\"" << pitchToNote(g.GetR()[i].event.pitch) << "\";style=filled;fillcolor="
+        o << "r" << i << " [label=\"" << pitchToNote(g.GetR()[i].pitch) << "\";style=filled;fillcolor="
           << degToCol(g.GetRNodeDegree(i)) << "]" << std::endl;
     }
 
@@ -142,7 +125,7 @@ void PrintGraphViz(const WeightedBipartiteGraph<MidiChar> &g, std::ostream &o) {
     for (size_t i = 0; i < g.GetL().size(); ++i) {
         for (auto e : g.GetLNodeEdges(i)) {
             o << "l" << i << " -- " << "r" << e.to;
-            if (g.GetL()[i].event.pitch != g.GetR()[e.to].event.pitch) {
+            if (g.GetL()[i].pitch != g.GetR()[e.to].pitch) {
                 o << "[color=red;penwidth=5]";
             }
             o << std::endl;

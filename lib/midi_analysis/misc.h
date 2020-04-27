@@ -7,14 +7,13 @@
 #include "MidiEventList.h"
 #include "MidiFile.h"
 
-void PrintGraphViz(const WeightedBipartiteGraph<MidiChar>& g, std::ostream& o);
+void PrintGraphViz(const WeightedBipartiteGraph<SimpleMidiEvent>& g, std::ostream& o);
 SimpleMidiEvent fromMidiEvent(int offset, const smf::MidiEvent& mevt);
 std::string pitchToNote(uint8_t pitch);
-std::ostream& operator<<(std::ostream& o, const MidiChar& ch);
+std::ostream& operator<<(std::ostream& o, const SimpleMidiEvent& ch);
 void printMidiEventList(const std::vector<SimpleMidiEvent>& evtlist);
 std::vector<SimpleMidiEvent> convertMidiEvents(const smf::MidiEventList &evtList);
 SimpleMidiEventList convertMidiFile(const smf::MidiFile& mf);
-MidiString constructMidiString(std::vector<SimpleMidiEvent> evts);
 MidiString loadMidiString(const std::string& path);
 bool isBlackKey(int midiIdx);
 
