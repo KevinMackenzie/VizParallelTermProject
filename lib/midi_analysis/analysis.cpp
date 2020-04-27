@@ -14,7 +14,7 @@ struct pt {
     size_t r, i;
 };
 
-#define REORDER_TIME_THRESH 50
+#define REORDER_TIME_THRESH 5000
 #define ORPHAN_COST 50
 struct MemoVal {
     WeightedBipartiteGraph<SimpleMidiEvent> g;
