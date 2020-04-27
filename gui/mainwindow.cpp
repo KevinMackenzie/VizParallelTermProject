@@ -111,7 +111,6 @@ void MainWindow::openFile(std::string fileName, int idx) {
     // file1.read(fileName);
     // file1.doTimeAnalysis();
     // file1.linkNotePairs();
-    scene->clearMidiNotes(idx);
     if (idx == 0) {
         analysis.setReference(file1);
     } else if (idx == 1) {
@@ -120,9 +119,7 @@ void MainWindow::openFile(std::string fileName, int idx) {
         std::cout << "ERROR: invalid file slot" << std::endl;
     }
     analysis.Analyze();
-    scene->drawMidiNotes(
-            idx == 0 ? *analysis.getReference() : (viewAligned ? analysis.getInputRefScaled() : *analysis.getInput()),
-            noteInfo, idx);
+    redrawFiles();
 }
 
 void MainWindow::redrawFiles() {
