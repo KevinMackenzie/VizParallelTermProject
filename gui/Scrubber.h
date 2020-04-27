@@ -13,7 +13,7 @@ public:
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
-    void updateYScale(qreal yscale) { this->YScale = yscale; }
+    void multYScale(qreal yscale) { this->YScale *= yscale; }
 
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;

@@ -1,57 +1,24 @@
-//
-// Created by donald on 4/11/20.
-//
-
-#include <QtGui/QPen>
-#include <QtGui/QPainter>
-#include "PianoRollPitchAxis.h"
 #include <Analysis.h>
+#include "PianoRollPitchAxis.h"
 
-PianoRollPitchAxis::PianoRollPitchAxis(QRectF rect, int lowNote, int highNote, QGraphicsItem *parent)
-        : QGraphicsRectItem(rect, parent), lowNote(lowNote), highNote(highNote) {
-    numWhiteKeys = 0;
+PianoRollPitchAxis::PianoRollPitchAxis(int low_note, int high_note, QGraphicsView *parent) :
+        QWidget(parent), offset(0), scale(1), low_note(low_note), high_note(high_note) {
 
-    for (unsigned int i = lowNote; i <= highNote; ++i) {
-        if (!isBlackKey(i)) {
-            ++numWhiteKeys;
-        }
-    }
-    qreal unit = rect.height() / numWhiteKeys;
-    whiteKeySize = QSizeF(6 * unit, unit);
-    blackKeySize = QSizeF(4 * unit, unit / 2);
+    setFixedWidth(60);
+    connect(parent->verticalScrollBar(), &QScrollBar::valueChanged, this, &PianoRollPitchAxis::setOffset);
+
 }
 
-void PianoRollPitchAxis::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
-
-    QPen pen(QColor(0, 0, 0));
-    QBrush blackBrush(QColor(0, 0, 0));
-    QBrush whiteBrush(QColor(255, 255, 255));
-
-    /* Due to the default ViewportUpdateMode of MinimalViewPortUpdate, sometimes we redraw only part of the viewport.
-     * Thus we cannot use rect.left() as it may be in the middle of the viewport
-     * Instead, we map the leftmost viewport coordinate (x=0) to a scene coordinate
-     * */
-    float left = 0;
-
-    //Draw white keys
-    painter->setPen(pen);
-    painter->setBrush((whiteBrush));
-    float top = this->rect().top();
-    for (int i = highNote; i >= lowNote; --i) {
-        if (!isBlackKey(i)) {
-            painter->drawRect(left, top, whiteKeySize.width() * xScale, whiteKeySize.height());
-            top += whiteKeySize.height();
-        }
-    }
-
-    // Draw black keys after (on top)
-    painter->setBrush(blackBrush);
-    top = this->rect().top();
-    for (int i = highNote; i >= lowNote; --i) {
-        if (isBlackKey(i)) {
-            painter->drawRect(left, top - blackKeySize.height() / 2, blackKeySize.width() * xScale, blackKeySize.height());
-        } else {
-            top += whiteKeySize.height();
-        }
+void PianoRollPitchAxis::paintEvent(QPaintEvent *event) {
+    QPainter painter(this);
+    painter.translate(0, -offset);
+    painter.setFont(font());
+    double unit = (float)height() / (high_note - low_note+1) * scale;
+    qreal top = 0;
+    painter.setPen(QColor(0, 0, 0));
+    for (int note = high_note; note >= low_note; --note) {
+        painter.setBrush(isBlackKey(note) ? QColor(0, 0, 0) : QColor(255, 255, 255));
+        painter.drawRect(0, top, width(), unit);
+        top += unit;
     }
 }

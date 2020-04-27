@@ -26,11 +26,11 @@ void Scrubber::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
     auto transform = painter->viewport();
     painter->setPen(Qt::NoPen);
     painter->setBrush(Qt::red);
-    painter->drawRect(0, 0, 4, 500/YScale);
+    painter->drawRect(0, 0, 4, 500*YScale);
 }
 
 QRectF Scrubber::boundingRect() const {
-    return QRectF(0, 0, 4, 500/YScale);
+    return QRectF(0, 0, 4, 500*YScale);
 }
 
 void Scrubber::mousePressEvent(QGraphicsSceneMouseEvent *event) {

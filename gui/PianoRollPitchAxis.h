@@ -1,29 +1,40 @@
-#ifndef PROJECT_PIANOROLLPITCHAXIS_H
-#define PROJECT_PIANOROLLPITCHAXIS_H
+#ifndef VIZPARALLELTERMPROJECT_PIANOROLLPITCHAXIS_H
+#define VIZPARALLELTERMPROJECT_PIANOROLLPITCHAXIS_H
 
 
-#include <QtWidgets/QGraphicsRectItem>
+#include <QWidget>
+#include <QScrollBar>
+#include <QAbstractScrollArea>
+#include <QPainter>
+#include <iostream>
+#include <QGraphicsView>
 
-class PianoRollPitchAxis : public QGraphicsRectItem {
+class PianoRollPitchAxis : public QWidget {
+Q_OBJECT
 public:
-    explicit PianoRollPitchAxis(QRectF rect, int lowNote, int highNote, QGraphicsItem *parent = nullptr);
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    explicit PianoRollPitchAxis(int low_note, int high_note, QGraphicsView *parent = nullptr);
 
-    void updateXScale(qreal xScale) { this->xScale = xScale; }
+    void paintEvent(QPaintEvent *event) override;
 
-    QSizeF getBlackKeySize() const { return blackKeySize; }
-    QSizeF getWhiteKeySize() const { return whiteKeySize; }
-    int getNumWhiteKeys() const {return numWhiteKeys;}
-    int getHighNote() const {return highNote; }
-    int getLowNote() const {return lowNote; }
+public slots:
+
+    void setOffset(int value) {
+        offset = value;
+        update();
+    }
+
+    void multScale(float value) {
+        scale *= value;
+        update();
+    }
+
 private:
-    int lowNote;
-    int highNote;
-    QSizeF whiteKeySize;
-    QSizeF blackKeySize;
-    qreal xScale;
-    int numWhiteKeys;
+    int offset;
+    float scale;
+    int low_note;
+    int high_note;
+
 };
 
 
-#endif //PROJECT_PIANOROLLPITCHAXIS_H
+#endif //VIZPARALLELTERMPROJECT_PIANOROLLPITCHAXIS_H

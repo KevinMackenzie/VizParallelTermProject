@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     gview = new PianoRollView(scene, this);
     this->setCentralWidget(gview);
     gview->centerOn(0, 250);
+    gview->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
     noteInfo = new NoteInfo(analysis, this);
     noteInfoDock = new QDockWidget(tr("Note Information"), this);
