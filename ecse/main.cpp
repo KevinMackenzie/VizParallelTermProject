@@ -109,29 +109,29 @@ int main(int argc, char **argv) {
 
     cutVestigialEdges(g);
 
-    auto averageOnsetInt = (float)(ref.back().event.onset - ref[0].event.onset) / ref.size();
-    std::cout << "Average OI " << averageOnsetInt << std::endl;
+    // auto averageOnsetInt = (float)(ref.back().event.onset - ref[0].event.onset) / ref.size();
+    // std::cout << "Average OI " << averageOnsetInt << std::endl;
 
-    auto lt = filterOnsetFrequency(ref, 1000);
-    std::ofstream o1("tempoL.csv");
-    for (size_t i = 0; i < lt.size(); ++i) {
-        o1 << ref[i].event.onset << "," << lt[i] << std::endl;
-    }
-    o1.close();
+    // auto lt = filterOnsetFrequency(ref, 1000);
+    // std::ofstream o1("tempoL.csv");
+    // for (size_t i = 0; i < lt.size(); ++i) {
+    //     o1 << ref[i].event.onset << "," << lt[i] << std::endl;
+    // }
+    // o1.close();
 
-    auto rt = filterOnsetFrequency(inp, 1000);
-    std::ofstream o2("tempoR.csv");
-    for (size_t i = 0; i < rt.size(); ++i) {
-        o2 << inp[i].event.onset << "," << rt[i] << std::endl;
-    }
-    o2.close();
+    // auto rt = filterOnsetFrequency(inp, 1000);
+    // std::ofstream o2("tempoR.csv");
+    // for (size_t i = 0; i < rt.size(); ++i) {
+    //     o2 << inp[i].event.onset << "," << rt[i] << std::endl;
+    // }
+    // o2.close();
 
-    auto ts = filterTimeStretch(g, lt, rt, 100);
-    std::ofstream o3("stretch.csv");
-    for (size_t i = 0; i < ts.size(); ++i) {
-        o3 << inp[i].event.onset << "," << ts[i] << std::endl;
-    }
-    o3.close();
+    // auto ts = filterTimeStretch(g, lt, rt, 100);
+    // std::ofstream o3("stretch.csv");
+    // for (size_t i = 0; i < ts.size(); ++i) {
+    //     o3 << inp[i].event.onset << "," << ts[i] << std::endl;
+    // }
+    // o3.close();
 
     // std::cout << "Edit Distance Result: " << g.GetTotalWeight() << std::endl;
     // std::cout << g;
@@ -152,6 +152,9 @@ int main(int argc, char **argv) {
     std::ofstream ofile("graph.dot");
     PrintGraphViz(g, ofile);
     ofile.close();
+    std::ofstream ofile1("graph.txt");
+    PrintGraph(g, ofile1);
+    ofile1.close();
 
     return 0;
 }

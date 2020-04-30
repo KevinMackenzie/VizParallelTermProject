@@ -147,3 +147,22 @@ void PrintGraphViz(const WeightedBipartiteGraph<SimpleMidiEvent> &g, std::ostrea
     o << "[style=invis];rankdir=LR}" << std::endl;
     o << "}" << std::endl;
 }
+
+
+void PrintGraph(const WeightedBipartiteGraph<SimpleMidiEvent> &g, std::ostream &o) {
+    o << "LNODES" << std::endl;
+    for (auto l : g.GetL()) {
+        o << (int)l.pitch << "," << l.onset << "," << (int)l.duration << "," << (int)l.velocity << std::endl;
+    }
+    o << "RNODES" << std::endl;
+    for (auto l : g.GetR()) {
+        o << (int)l.pitch << "," << l.onset << "," << (int)l.duration << "," << (int)l.velocity << std::endl;
+    }
+
+    o << "EDGES" << std::endl;
+    for (size_t l = 0; l < g.GetL().size(); ++l) {
+        for (auto e : g.GetLNodeEdges(l)) {
+            o << l << "," << e.to << "," << e.weight << std::endl;
+        }
+    }
+}

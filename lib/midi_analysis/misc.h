@@ -8,6 +8,7 @@
 #include "MidiFile.h"
 
 void PrintGraphViz(const WeightedBipartiteGraph<SimpleMidiEvent>& g, std::ostream& o);
+void PrintGraph(const WeightedBipartiteGraph<SimpleMidiEvent>& g, std::ostream& o);
 SimpleMidiEvent fromMidiEvent(int offset, const smf::MidiEvent& mevt);
 std::string pitchToNote(uint8_t pitch);
 std::ostream& operator<<(std::ostream& o, const SimpleMidiEvent& ch);

@@ -28,6 +28,8 @@ bool AdjacencyData::Remove(IndexType to) {
 
 bool AdjacencyData::Add(IndexType to, float weight) {
     if (size == MAX_CONNECTIVITY) return false;
-    to_list[size++] = {weight, to};
+    auto& r = to_list[size++];
+    r.weight = weight;
+    r.to = to;
     return true;
 }
